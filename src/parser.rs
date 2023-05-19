@@ -3,7 +3,7 @@ use nom::branch::alt;
 use nom::bytes::complete::{tag, take_while, take_while_m_n};
 use nom::character::complete::char;
 use nom::combinator::{map, opt};
-use nom::error::*;
+use nom::error::ParseError;
 use nom::multi::many1;
 use nom::sequence::{delimited, pair, preceded};
 use nom::IResult;
@@ -51,7 +51,7 @@ where
     map(parser, Expression::make_id)(i)
 }
 
-fn parse_expr<'a, E>(i: &'a str) -> IResult<&'a str, Expression, E>
+pub fn parse_expr<'a, E>(i: &'a str) -> IResult<&'a str, Expression, E>
 where
     E: ParseError<&'a str>,
 {
@@ -62,19 +62,15 @@ fn parse_statement<'a, E>(i: &'a str) -> IResult<&'a str, Statement, E>
 where
     E: ParseError<&'a str>,
 {
-    let parser = many1(parse_def);
+    let parser = many1(parse_assign);
     map(parser, |x| Statement { expressions: x })(i)
 }
 
-fn parse_module<'a, E>(i: &'a str) -> IResult<&'a str, Module, E>
+pub fn parse_module<'a, E>(i: &'a str) -> IResult<&'a str, Module, E>
 where
     E: ParseError<&'a str>,
 {
     let p1 = delimited(drop_spaces, parse_statement, opt(drop_spaces));
     let parser = many1(p1);
     map(parser, |x| Module { statements: x })(i)
-}
-
-pub fn parse(input: &str) -> Result<(&str, Module), nom::Err<VerboseError<&str>>> {
-    parse_module::<VerboseError<&str>>(input)
 }
