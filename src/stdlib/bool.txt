@@ -1,0 +1,10 @@
+
+id = \a a
+if = id
+
+true = \a \b a
+false = \a \b b
+
+or = \a \b a true b
+and = \a \b a b false
+not = \a false true
