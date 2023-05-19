@@ -1,13 +1,20 @@
 use crate::ast::*;
 use nom::branch::alt;
-use nom::bytes::complete::{tag, take_while_m_n};
+use nom::bytes::complete::{tag, take_while, take_while_m_n};
 use nom::character::complete::char;
-use nom::combinator::map;
-use nom::error::{ErrorKind, ParseError};
+use nom::combinator::{map, opt};
+use nom::error::*;
 use nom::multi::many1;
-use nom::sequence::{pair, preceded};
+use nom::sequence::{delimited, pair, preceded};
 use nom::IResult;
 use std::str;
+
+fn drop_spaces<'a, E>(i: &'a str) -> IResult<&'a str, &str, E>
+where
+    E: ParseError<&'a str>,
+{
+    take_while(|c: char| c.is_ascii_whitespace())(i)
+}
 
 fn parse_def<'a, E>(i: &'a str) -> IResult<&'a str, Expression, E>
 where
@@ -63,10 +70,11 @@ fn parse_module<'a, E>(i: &'a str) -> IResult<&'a str, Module, E>
 where
     E: ParseError<&'a str>,
 {
-    let parser = many1(parse_statement);
+    let p1 = delimited(drop_spaces, parse_statement, opt(drop_spaces));
+    let parser = many1(p1);
     map(parser, |x| Module { statements: x })(i)
 }
 
-pub fn parse(input: &str) -> Result<(&str, Module), nom::Err<(&str, ErrorKind)>> {
-    parse_module::<(&str, ErrorKind)>(input)
+pub fn parse(input: &str) -> Result<(&str, Module), nom::Err<VerboseError<&str>>> {
+    parse_module::<VerboseError<&str>>(input)
 }
