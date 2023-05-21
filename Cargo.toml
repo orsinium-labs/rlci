@@ -7,3 +7,6 @@ edition = "2021"
 clap = { version = "4.2.7", features = ["derive"] }
 pest = "2.6.0"
 pest_derive = "2.6.0"
+
+[dev-dependencies]
+rstest = "0.17.0"

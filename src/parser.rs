@@ -9,9 +9,7 @@ pub struct LangParser;
 
 #[allow(clippy::result_large_err)]
 pub fn parse(input: &str) -> Result<Module, Error<Rule>> {
-    let root = LangParser::parse(Rule::module, input)?
-        .next()
-        .expect("there is only one root");
+    let root = LangParser::parse(Rule::module, input)?.next().unwrap();
     Ok(parse_module(root))
 }
 
@@ -22,7 +20,7 @@ fn parse_module(root: Pair<Rule>) -> Module {
             stmts.push(stmt)
         }
     }
-    Module { statements: stmts }
+    Module { stmts }
 }
 
 fn parse_statement(root: Pair<Rule>) -> Option<Stmt> {
@@ -78,5 +76,33 @@ fn parse_expression(root: Pair<Rule>) -> Expr {
             name: root.as_str().parse().unwrap(),
         },
         _ => unreachable!(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case::id(r#"id"#)]
+    #[case::call(r#"id x"#)]
+    #[case::def(r#"\x x"#)]
+    #[case::assign(r#"id = \x x"#)]
+    #[case(r#"id = \a \b x"#)]
+    #[case(r#"apply = \f f f"#)]
+    #[case(r#"x = \f f (f f)"#)]
+    fn smoke_parse_ok(#[case] input: &str) {
+        assert!(parse(input).is_ok());
+    }
+
+    #[rstest]
+    #[case(r#""#)]
+    #[case(r#"\x"#)]
+    #[case(r#"a \x"#)]
+    #[case(r#"id = "#)]
+    #[case(r#"id = \x"#)]
+    fn smoke_parse_err(#[case] input: &str) {
+        assert!(parse(input).is_err());
     }
 }
