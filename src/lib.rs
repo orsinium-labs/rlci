@@ -1,12 +1,16 @@
+extern crate pest;
+#[macro_use]
+extern crate pest_derive;
+
 mod ast {
-    mod expression;
+    mod expr;
     mod module;
     mod statement;
 
-    pub use expression::Expression;
+    pub use expr::Expr;
     pub use module::Module;
-    pub use statement::Statement;
+    pub use statement::Stmt;
 }
 
 mod parser;
-pub use parser::{parse_expr, parse_module};
+pub use parser::{parse, LangParser};

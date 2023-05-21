@@ -1,78 +1,82 @@
 use crate::ast::*;
-use nom::branch::alt;
-use nom::bytes::complete::{tag, take_while, take_while1, take_while_m_n};
-use nom::character::complete::char;
-use nom::combinator::{fail, map, opt};
-use nom::error::ParseError;
-use nom::multi::many1;
-use nom::sequence::{delimited, pair, preceded, terminated};
-use nom::IResult;
-use std::str;
+use pest::error::Error;
+use pest::iterators::Pair;
+use pest::Parser;
 
-fn drop_spaces<'a, E>(i: &'a str) -> IResult<&'a str, &str, E>
-where
-    E: ParseError<&'a str>,
-{
-    take_while(|c: char| c.is_ascii_whitespace())(i)
+#[derive(Parser)]
+#[grammar = "grammar.pest"]
+pub struct LangParser;
+
+#[allow(clippy::result_large_err)]
+pub fn parse(input: &str) -> Result<Module, Error<Rule>> {
+    let root = LangParser::parse(Rule::module, input)?
+        .next()
+        .expect("there is only one root");
+    Ok(parse_module(root))
 }
 
-fn parse_def<'a, E>(i: &'a str) -> IResult<&'a str, Expression, E>
-where
-    E: ParseError<&'a str>,
-{
-    let p1 = take_while1(|c: char| c.is_alphanumeric());
-    let p2 = preceded(char('\\'), p1);
-    let p3 = terminated(p2, char(' '));
-    let p4 = pair(p3, parse_expr);
-    map(p4, Expression::make_def)(i)
+fn parse_module(root: Pair<Rule>) -> Module {
+    let mut stmts: Vec<Stmt> = Vec::new();
+    for subpair in root.into_inner() {
+        if let Some(stmt) = parse_statement(subpair) {
+            stmts.push(stmt)
+        }
+    }
+    Module { statements: stmts }
 }
 
-fn parse_call<'a, E>(i: &'a str) -> IResult<&'a str, Expression, E>
-where
-    E: ParseError<&'a str>,
-{
-    fail::<_, Expression, _>(i)
-    // let parser = pair(parse_expr, preceded(char(' '), parse_expr));
-    // map(parser, Expression::make_call)(i)
+fn parse_statement(root: Pair<Rule>) -> Option<Stmt> {
+    match root.as_rule() {
+        Rule::statement => {
+            let subpair = root.into_inner().next().unwrap();
+            parse_statement(subpair)
+        }
+        Rule::assignment => {
+            let mut subpairs = root.into_inner();
+            let p1 = subpairs.next().unwrap();
+            let p2 = subpairs.next().unwrap();
+            Some(Stmt::Assign {
+                target: p1.as_str().to_owned(),
+                expr: Box::new(parse_expression(p2)),
+            })
+        }
+        Rule::expression => {
+            let subpair = root.into_inner().next().unwrap();
+            let expr = parse_expression(subpair);
+            Some(Stmt::Expr { expr })
+        }
+        Rule::EOI => None,
+        _ => unreachable!(),
+    }
 }
 
-fn parse_assign<'a, E>(i: &'a str) -> IResult<&'a str, Expression, E>
-where
-    E: ParseError<&'a str>,
-{
-    let p1 = take_while_m_n(1, 6, |c: char| c.is_alphanumeric());
-    let parser = pair(p1, preceded(tag(" = "), parse_expr));
-    map(parser, Expression::make_assign)(i)
-}
-
-fn parse_id<'a, E>(i: &'a str) -> IResult<&'a str, Expression, E>
-where
-    E: ParseError<&'a str>,
-{
-    let parser = take_while_m_n(1, 6, |c: char| c.is_alphanumeric());
-    map(parser, Expression::make_id)(i)
-}
-
-pub fn parse_expr<'a, E>(i: &'a str) -> IResult<&'a str, Expression, E>
-where
-    E: ParseError<&'a str>,
-{
-    alt((parse_call, parse_assign, parse_id, parse_def))(i)
-}
-
-fn parse_statement<'a, E>(i: &'a str) -> IResult<&'a str, Statement, E>
-where
-    E: ParseError<&'a str>,
-{
-    let parser = many1(parse_assign);
-    map(parser, |x| Statement { expressions: x })(i)
-}
-
-pub fn parse_module<'a, E>(i: &'a str) -> IResult<&'a str, Module, E>
-where
-    E: ParseError<&'a str>,
-{
-    let p1 = delimited(drop_spaces, parse_statement, opt(drop_spaces));
-    let parser = many1(p1);
-    map(parser, |x| Module { statements: x })(i)
+fn parse_expression(root: Pair<Rule>) -> Expr {
+    match root.as_rule() {
+        Rule::expression => {
+            let subpair = root.into_inner().next().unwrap();
+            parse_expression(subpair)
+        }
+        Rule::definition => {
+            let mut subpairs = root.into_inner();
+            let p1 = subpairs.next().unwrap();
+            let p2 = subpairs.next().unwrap();
+            Expr::Def {
+                arg: p1.as_str().to_owned(),
+                expr: Box::new(parse_expression(p2)),
+            }
+        }
+        Rule::call => {
+            let mut subpairs = root.into_inner();
+            let p1 = subpairs.next().unwrap();
+            let p2 = subpairs.next().unwrap();
+            Expr::Call {
+                target: Box::new(parse_expression(p1)),
+                arg: Box::new(parse_expression(p2)),
+            }
+        }
+        Rule::identifier => Expr::Id {
+            name: root.as_str().parse().unwrap(),
+        },
+        _ => unreachable!(),
+    }
 }

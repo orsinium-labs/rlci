@@ -1,6 +1,6 @@
-use super::statement::Statement;
+use super::statement::Stmt;
 
 #[derive(Debug, PartialEq)]
 pub struct Module {
-    pub statements: Vec<Statement>,
+    pub statements: Vec<Stmt>,
 }

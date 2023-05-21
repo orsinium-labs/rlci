@@ -1,0 +1,8 @@
+module = { SOI ~ statement+ ~ EOI }
+statement = { ( assignment | expression) ~ whitespace* }
+assignment = { identifier ~ " "* ~ "=" ~ " "* ~ expression }
+expression = { definition | call | identifier }
+definition = { "\\" ~ identifier ~ " "+ ~ expression }
+call = { identifier ~ " "+ ~ identifier }
+identifier = { ASCII_ALPHANUMERIC+ }
+whitespace = _{ " " | "\t" | "\u{000C}" | "\r" | "\n" }
