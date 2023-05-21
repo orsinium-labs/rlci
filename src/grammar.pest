@@ -1,5 +1,5 @@
 module = { SOI ~ statement+ ~ EOI }
-statement = { ( assignment | expression) ~ whitespace* ~ (EOI | "\n") }
+statement = { ( assignment | expression) ~ WSPACE* ~ (EOI | NEWLINE) }
   assignment = { identifier ~ " "* ~ "=" ~ " "* ~ expression }
   expression = { definition | call | identifier | ( "(" ~ expression ~ ")" ) }
     call = {
@@ -10,5 +10,11 @@ statement = { ( assignment | expression) ~ whitespace* ~ (EOI | "\n") }
         )+
     }
     definition = { "\\" ~ identifier ~ " "+ ~ expression }
-    identifier = { ASCII_ALPHANUMERIC+ }
-whitespace = _{ " " | "\t" | "\u{000C}" | "\r" | "\n" }
+    identifier = { ASCII_ALPHANUMERIC+ | PUNCT+ }
+
+WSPACE = _{ " " | "\t" | "\u{000C}" | "\r" | "\n" }
+PUNCT = {
+    "!" | "#" | "$" | "%" | "&" | "*" | "+" |
+    "-" | "/" | "<" | ">" | "?" | "@" |
+    "^" | "~" | "|" | ">=" | "<=" | "=="
+}

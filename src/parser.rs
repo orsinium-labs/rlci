@@ -99,6 +99,10 @@ mod tests {
     #[case(r#"x = \f (a b) c"#)]
     #[case(r#"x = \f (\x x) c"#)]
     #[case(r#"x = \f (\x x)"#)]
+    #[case(r#"+ a b"#)]
+    #[case(r#"+ = \a \b a b"#)]
+    #[case(r#"add = \a \b + a b"#)]
+    #[case(r#"add = +"#)]
     fn smoke_parse_ok(#[case] input: &str) {
         assert!(parse(input).is_ok());
     }
