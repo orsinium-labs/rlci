@@ -1,4 +1,4 @@
-use super::statement::Stmt;
+use super::stmt::Stmt;
 
 #[derive(Debug, PartialEq)]
 pub struct Module {

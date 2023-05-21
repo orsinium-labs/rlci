@@ -50,7 +50,7 @@ fn parse_statement(root: Pair<Rule>) -> Option<Stmt> {
 
 fn parse_expression(root: Pair<Rule>) -> Expr {
     match root.as_rule() {
-        Rule::expression | Rule::short_expr => {
+        Rule::expression => {
             let subpair = root.into_inner().next().unwrap();
             parse_expression(subpair)
         }
@@ -66,11 +66,14 @@ fn parse_expression(root: Pair<Rule>) -> Expr {
         Rule::call => {
             let mut subpairs = root.into_inner();
             let p1 = subpairs.next().unwrap();
-            let p2 = subpairs.next().unwrap();
-            Expr::Call {
-                target: Box::new(parse_expression(p1)),
-                arg: Box::new(parse_expression(p2)),
+            let mut target = parse_expression(p1);
+            for p in subpairs {
+                target = Expr::Call {
+                    target: Box::new(target),
+                    arg: Box::new(parse_expression(p)),
+                }
             }
+            target
         }
         Rule::identifier => Expr::Id {
             name: root.as_str().parse().unwrap(),
@@ -89,9 +92,13 @@ mod tests {
     #[case::call(r#"id x"#)]
     #[case::def(r#"\x x"#)]
     #[case::assign(r#"id = \x x"#)]
+    #[case::call_chain(r#"id a b"#)]
     #[case(r#"id = \a \b x"#)]
     #[case(r#"apply = \f f f"#)]
-    #[case(r#"x = \f f (f f)"#)]
+    #[case(r#"x = \f a (b c)"#)]
+    #[case(r#"x = \f (a b) c"#)]
+    #[case(r#"x = \f (\x x) c"#)]
+    #[case(r#"x = \f (\x x)"#)]
     fn smoke_parse_ok(#[case] input: &str) {
         assert!(parse(input).is_ok());
     }

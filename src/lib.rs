@@ -5,11 +5,11 @@ extern crate pest_derive;
 mod ast {
     mod expr;
     mod module;
-    mod statement;
+    mod stmt;
 
     pub use expr::Expr;
     pub use module::Module;
-    pub use statement::Stmt;
+    pub use stmt::Stmt;
 }
 
 mod parser;

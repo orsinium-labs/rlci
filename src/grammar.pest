@@ -4,8 +4,10 @@ statement = { ( assignment | expression) ~ whitespace* ~ (EOI | "\n") }
   expression = { definition | call | identifier | ( "(" ~ expression ~ ")" ) }
     call = {
         ( identifier | ( "(" ~ expression ~ ")" ) )
-        ~ " "+
-        ~ ( identifier | ( "(" ~ expression ~ ")" ) )
+        ~ (
+            " "+
+            ~ ( identifier | ( "(" ~ expression ~ ")" ) )
+        )+
     }
     definition = { "\\" ~ identifier ~ " "+ ~ expression }
     identifier = { ASCII_ALPHANUMERIC+ }
