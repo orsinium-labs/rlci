@@ -88,23 +88,30 @@ mod tests {
     use rstest::rstest;
 
     #[rstest]
-    #[case::id(r#"id"#)]
-    #[case::call(r#"id x"#)]
-    #[case::def(r#"\x x"#)]
-    #[case::assign(r#"id = \x x"#)]
-    #[case::call_chain(r#"id a b"#)]
-    #[case(r#"id = \a \b x"#)]
-    #[case(r#"apply = \f f f"#)]
-    #[case(r#"x = \f a (b c)"#)]
-    #[case(r#"x = \f (a b) c"#)]
-    #[case(r#"x = \f (\x x) c"#)]
-    #[case(r#"x = \f (\x x)"#)]
-    #[case(r#"+ a b"#)]
-    #[case(r#"+ = \a \b a b"#)]
-    #[case(r#"add = \a \b + a b"#)]
-    #[case(r#"add = +"#)]
-    fn smoke_parse_ok(#[case] input: &str) {
-        assert!(parse(input).is_ok());
+    #[case::id(r#"id"#, "id")]
+    #[case::call(r#"id x"#, "call(id, id)")]
+    #[case::def(r#"\x x"#, "def(id)")]
+    #[case::assign(r#"id = \x x"#, "let(def(id))")]
+    #[case(r#"id= \x x"#, "let(def(id))")]
+    #[case(r#"id =\x x"#, "let(def(id))")]
+    #[case(r#"id=\x x"#, "let(def(id))")]
+    #[case::call_chain(r#"id a b"#, "call(call(id, id), id)")]
+    #[case(r#"id = \a \b x"#, "let(def(def(id)))")]
+    #[case(r#"apply = \f f f"#, "let(def(call(id, id)))")]
+    #[case(r#"x = \f a (b c)"#, "let(def(call(id, call(id, id))))")]
+    #[case(r#"x = \f (a b) c"#, "let(def(call(call(id, id), id)))")]
+    #[case(r#"x = \f (\x x) c"#, "let(def(call(def(id), id)))")]
+    #[case(r#"x = \f \x x"#, "let(def(def(id)))")]
+    #[case(r#"x = \f (\x x)"#, "let(def(def(id)))")]
+    #[case::call_punct(r#"+ a b"#, "call(call(id, id), id)")]
+    #[case::assign_punct(r#"+ = \a \b a b"#, "let(def(def(call(id, id))))")]
+    #[case(r#"add = \a \b + a b"#, "let(def(def(call(call(id, id), id))))")]
+    #[case::alias(r#"add = +"#, "let(id)")]
+    fn smoke_parse_stmt_ok(#[case] input: &str, #[case] exp: &str) {
+        let module = parse(input).unwrap();
+        assert_eq!(module.stmts.len(), 1);
+        let stmt = &module.stmts[0];
+        assert_eq!(stmt.short_repr(), exp);
     }
 
     #[rstest]
@@ -113,7 +120,7 @@ mod tests {
     #[case(r#"a \x"#)]
     #[case(r#"id = "#)]
     #[case(r#"id = \x"#)]
-    fn smoke_parse_err(#[case] input: &str) {
+    fn smoke_parse_stmt_err(#[case] input: &str) {
         assert!(parse(input).is_err());
     }
 }

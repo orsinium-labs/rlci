@@ -9,3 +9,15 @@ pub enum Expr {
     /// Identifier, a name of a lambda.
     Id { name: String },
 }
+
+impl Expr {
+    pub fn short_repr(&self) -> String {
+        match self {
+            Expr::Def { arg: _, expr } => format!("def({})", expr.short_repr()),
+            Expr::Call { target, arg } => {
+                format!("call({}, {})", target.short_repr(), arg.short_repr())
+            }
+            Expr::Id { name: _ } => "id".to_string(),
+        }
+    }
+}
