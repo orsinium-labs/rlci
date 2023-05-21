@@ -1,8 +1,9 @@
 module = { SOI ~ statement+ ~ EOI }
 statement = { ( assignment | expression) ~ whitespace* ~ (EOI | "\n") }
-assignment = { identifier ~ " "* ~ "=" ~ " "* ~ expression }
-expression = { definition | call | identifier | ( "(" ~ expression ~ ")" ) }
-definition = { "\\" ~ identifier ~ " "+ ~ expression }
-call = { identifier ~ " "+ ~ expression }
-identifier = { ASCII_ALPHANUMERIC+ }
+  assignment = { identifier ~ " "* ~ "=" ~ " "* ~ expression }
+  expression = { definition | call | identifier | ( "(" ~ expression ~ ")" ) }
+  short_expr = { definition | identifier | ( "(" ~ expression ~ ")" ) }
+    definition = { "\\" ~ identifier ~ " "+ ~ expression }
+    call = { identifier ~ " "+ ~ short_expr }
+    identifier = { ASCII_ALPHANUMERIC+ }
 whitespace = _{ " " | "\t" | "\u{000C}" | "\r" | "\n" }

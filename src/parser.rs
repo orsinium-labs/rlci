@@ -50,7 +50,7 @@ fn parse_statement(root: Pair<Rule>) -> Option<Stmt> {
 
 fn parse_expression(root: Pair<Rule>) -> Expr {
     match root.as_rule() {
-        Rule::expression => {
+        Rule::expression | Rule::short_expr => {
             let subpair = root.into_inner().next().unwrap();
             parse_expression(subpair)
         }
