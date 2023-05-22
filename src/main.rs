@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use colored::Colorize;
 use rlci::interpreter::Session;
 use rlci::parse;
 use rustyline::error::ReadlineError;
@@ -45,7 +46,7 @@ fn cmd_parse(input: &str) {
 fn cmd_repl() {
     let mut rl = DefaultEditor::new().unwrap();
     if rl.load_history("history.txt").is_err() {
-        println!("No previous history.");
+        println!("{}", "No previous history.".yellow());
     }
     let mut session = Session::new();
     loop {
@@ -56,21 +57,21 @@ fn cmd_repl() {
                 match parse(&input) {
                     Ok(module) => {
                         let result = session.eval_module(&module);
-                        println!("{}", result.repr());
+                        println!("{}", result.repr().green());
                     }
-                    Err(err) => println!("{err}"),
+                    Err(err) => println!("{}", err.to_string().red()),
                 }
             }
             Err(ReadlineError::Interrupted) => {
-                println!("CTRL-C");
+                println!("{}", "CTRL-C".yellow());
                 break;
             }
             Err(ReadlineError::Eof) => {
-                println!("CTRL-D");
+                println!("{}", "CTRL-D".yellow());
                 break;
             }
             Err(err) => {
-                println!("Error: {:?}", err);
+                println!("{}", err.to_string().red());
                 break;
             }
         }
