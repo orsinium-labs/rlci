@@ -16,10 +16,10 @@ pub fn run_repl() {
             Ok(input) => {
                 rl.add_history_entry(&input).unwrap();
                 match parse(&input) {
-                    Ok(module) => {
-                        let result = session.eval_module(&module);
-                        println!("{}", result.repr().green());
-                    }
+                    Ok(module) => match session.eval_module(&module) {
+                        Ok(result) => println!("{}", result.repr().green()),
+                        Err(err) => println!("{}", err.to_string().red()),
+                    },
                     Err(err) => println!("{}", err.to_string().red()),
                 }
             }

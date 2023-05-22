@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::interpreter::Value;
 
+#[derive(Debug)]
 pub struct GlobalScope {
     values: HashMap<String, Value>,
 }
@@ -17,8 +18,9 @@ impl GlobalScope {
         self.values.get(name)
     }
 
-    pub fn set(&mut self, name: &str, val: Value) {
+    pub fn set(&mut self, name: &str, val: Value) -> &Value {
         self.values.insert(name.to_string(), val);
+        self.get(name).unwrap()
     }
 }
 
