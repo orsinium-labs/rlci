@@ -1,9 +1,7 @@
 use clap::{Parser, Subcommand};
-use colored::Colorize;
-use rlci::interpreter::Session;
+use rlci::interpreter::run_repl;
 use rlci::parse;
-use rustyline::error::ReadlineError;
-use rustyline::DefaultEditor;
+
 use std::io::{stdin, BufRead};
 
 #[derive(Parser)]
@@ -32,49 +30,11 @@ fn main() {
             }
             cmd_parse(&input);
         }
-        Commands::Repl => {
-            cmd_repl();
-        }
+        Commands::Repl => run_repl(),
     }
 }
 
 fn cmd_parse(input: &str) {
     let res = parse(input);
     println!("{:#?}", res);
-}
-
-fn cmd_repl() {
-    let mut rl = DefaultEditor::new().unwrap();
-    if rl.load_history("history.txt").is_err() {
-        println!("{}", "No previous history.".yellow());
-    }
-    let mut session = Session::new();
-    loop {
-        let readline = rl.readline(">>> ");
-        match readline {
-            Ok(input) => {
-                rl.add_history_entry(&input).unwrap();
-                match parse(&input) {
-                    Ok(module) => {
-                        let result = session.eval_module(&module);
-                        println!("{}", result.repr().green());
-                    }
-                    Err(err) => println!("{}", err.to_string().red()),
-                }
-            }
-            Err(ReadlineError::Interrupted) => {
-                println!("{}", "CTRL-C".yellow());
-                break;
-            }
-            Err(ReadlineError::Eof) => {
-                println!("{}", "CTRL-D".yellow());
-                break;
-            }
-            Err(err) => {
-                println!("{}", err.to_string().red());
-                break;
-            }
-        }
-    }
-    rl.save_history("history.txt").unwrap();
 }

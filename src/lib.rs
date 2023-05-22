@@ -9,10 +9,12 @@ mod parser;
 pub use parser::{parse, LangParser};
 
 pub mod interpreter {
+    mod repl;
     mod scope;
     mod session;
     mod value;
 
+    pub use repl::run_repl;
     pub use scope::{GlobalScope, LocalScope, Scope};
     pub use session::Session;
     pub use value::Value;
