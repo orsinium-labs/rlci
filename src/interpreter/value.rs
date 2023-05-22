@@ -58,6 +58,7 @@ mod tests {
     #[case::id(r#"id"#, "id")]
     #[case::id(r#"\x x"#, "λx x")]
     #[case::id(r#"\a \b a b"#, "λa λb a b")]
+    #[case::id(r#"\a \b (\c c) b"#, "λa λb (λc c) b")]
     #[case::id(r#"\a \b a (b a)"#, "λa λb a (b a)")]
     #[case::id(r#"\a \b a b a"#, "λa λb a b a")]
     #[case::id(r#"\a \b (a b) a"#, "λa λb a b a")]
