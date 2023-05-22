@@ -17,6 +17,7 @@ PUNCT = {
     // there is no `=` yet because it might be ambiguous when assigning to it
     "!" | "#" | "$" | "%" | "&" | "*" | "+" | "-" |
     "/" | "<" | ">" | "?" | "@" | "^" | "~" | "|" |
-    // some unicode chars
-    "≤" | "≥" | "≈"
+    // allow unicode math symbols
+    // https://en.wikipedia.org/wiki/Mathematical_operators_and_symbols_in_Unicode
+    '\u{2200}'..'\u{22FF}'
 }

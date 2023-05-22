@@ -21,7 +21,7 @@ pub enum Stmt {
 }
 
 impl Stmt {
-    /// Represent the statement as a short S-tree-like string that reflects
+    /// Represent the statement as a short S-expression-like string that reflects
     /// the AST structure but not the content of the statement.
     ///
     /// It is very helpful for testing and debugging the parser, especially to find
