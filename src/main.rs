@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use rlci::interpreter::Session;
 use rlci::parse;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
@@ -22,9 +23,6 @@ enum Commands {
 
 fn main() {
     let cli = Cli::parse();
-
-    // You can check for the existence of subcommands, and if found use their
-    // matches just as you would the top level cmd
     match &cli.command {
         Commands::Parse => {
             let mut input = String::new();
@@ -49,12 +47,19 @@ fn cmd_repl() {
     if rl.load_history("history.txt").is_err() {
         println!("No previous history.");
     }
+    let mut session = Session::new();
     loop {
         let readline = rl.readline(">>> ");
         match readline {
-            Ok(line) => {
-                rl.add_history_entry(&line).unwrap();
-                println!("Line: {}", line);
+            Ok(input) => {
+                rl.add_history_entry(&input).unwrap();
+                match parse(&input) {
+                    Ok(module) => {
+                        let result = session.eval_module(&module);
+                        println!("{}", result.repr());
+                    }
+                    Err(err) => println!("{err}"),
+                }
             }
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");

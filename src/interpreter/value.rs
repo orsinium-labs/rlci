@@ -9,7 +9,7 @@ pub enum Value {
 }
 
 impl Value {
-    fn from_expr(expr: &Expr) -> Self {
+    pub fn from_expr(expr: &Expr) -> Self {
         match expr {
             Expr::Def { arg, expr } => Value::Def {
                 arg: arg.to_string(),
@@ -25,7 +25,7 @@ impl Value {
         }
     }
 
-    fn repr(&self) -> String {
+    pub fn repr(&self) -> String {
         match self {
             Value::Def { arg, value } => {
                 format!("λ{arg} {}", value.repr())
