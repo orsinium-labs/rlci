@@ -9,12 +9,14 @@ statement = { ( assignment | expression) ~ WSPACE* ~ (EOI | NEWLINE) }
             ~ ( identifier | ( "(" ~ expression ~ ")" ) )
         )+
     }
-    definition = { "\\" ~ identifier ~ " "+ ~ expression }
+    definition = { ("\\" | "λ") ~ identifier ~ " "+ ~ expression }
     identifier = { ASCII_ALPHANUMERIC+ | PUNCT+ }
 
 WSPACE = _{ " " | "\t" | "\u{000C}" | "\r" | "\n" }
 PUNCT = {
-    "!" | "#" | "$" | "%" | "&" | "*" | "+" |
-    "-" | "/" | "<" | ">" | "?" | "@" |
-    "^" | "~" | "|" | ">=" | "<=" | "=="
+    // there is no `=` yet because it might be ambiguous when assigning to it
+    "!" | "#" | "$" | "%" | "&" | "*" | "+" | "-" |
+    "/" | "<" | ">" | "?" | "@" | "^" | "~" | "|" |
+    // some unicode chars
+    "≤" | "≥" | "≈"
 }

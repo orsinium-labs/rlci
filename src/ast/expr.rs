@@ -1,3 +1,4 @@
+/// Expression is a node that can be used anywhere.
 #[derive(Debug, PartialEq)]
 pub enum Expr {
     /// Definition of a lambda.

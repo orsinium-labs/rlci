@@ -91,6 +91,7 @@ mod tests {
     #[case::id(r#"id"#, "id")]
     #[case::call(r#"id x"#, "call(id, id)")]
     #[case::def(r#"\x x"#, "def(id)")]
+    #[case::def(r#"λx x"#, "def(id)")]
     #[case::assign(r#"id = \x x"#, "let(def(id))")]
     #[case(r#"id= \x x"#, "let(def(id))")]
     #[case(r#"id =\x x"#, "let(def(id))")]
