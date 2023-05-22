@@ -1,11 +1,13 @@
 use crate::ast_nodes::Expr;
-use std::rc::Rc;
 
+use super::GlobalScope;
+
+#[derive(Debug, Clone)]
 pub enum Value {
-    Def { arg: String, value: Rc<Value> },
+    Def { arg: String, value: Box<Value> },
     Id { name: String },
-    BoundId { name: String, value: Rc<Value> },
-    Call { target: Rc<Value>, arg: Rc<Value> },
+    BoundId { name: String, value: Box<Value> },
+    Call { target: Box<Value>, arg: Box<Value> },
 }
 
 impl Value {
@@ -13,11 +15,11 @@ impl Value {
         match expr {
             Expr::Def { arg, expr } => Value::Def {
                 arg: arg.to_string(),
-                value: Rc::new(Value::from_expr(expr)),
+                value: Value::from_expr(expr).into(),
             },
             Expr::Call { target, arg } => Value::Call {
-                target: Rc::new(Value::from_expr(target)),
-                arg: Rc::new(Value::from_expr(arg)),
+                target: Value::from_expr(target).into(),
+                arg: Value::from_expr(arg).into(),
             },
             Expr::Id { name } => Value::Id {
                 name: name.to_string(),
@@ -43,6 +45,27 @@ impl Value {
                 }
                 format!("{tr} {ar}")
             }
+        }
+    }
+
+    pub fn bind(&self, global: &GlobalScope) -> Value {
+        match self {
+            Value::Def { arg, value } => Value::Def {
+                arg: arg.to_string(),
+                value: value.bind(global).into(),
+            },
+            Value::Id { name } => match global.get(name) {
+                Some(val) => Value::BoundId {
+                    name: name.to_string(),
+                    value: val.clone().into(),
+                },
+                None => self.clone(),
+            },
+            Value::BoundId { name: _, value: _ } => self.clone(),
+            Value::Call { target, arg } => Value::Call {
+                target: target.bind(global).into(),
+                arg: arg.bind(global).into(),
+            },
         }
     }
 }

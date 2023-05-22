@@ -15,7 +15,7 @@ pub mod interpreter {
     mod value;
 
     pub use repl::run_repl;
-    pub use scope::{GlobalScope, LocalScope, Scope};
+    pub use scope::{GlobalScope, LocalScope};
     pub use session::Session;
     pub use value::Value;
 }

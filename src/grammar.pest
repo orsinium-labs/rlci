@@ -10,7 +10,7 @@ statement = { ( assignment | expression) ~ WSPACE* ~ (EOI | NEWLINE) }
         )+
     }
     definition = { ("\\" | "λ") ~ identifier ~ " "+ ~ expression }
-    identifier = { ASCII_ALPHANUMERIC+ | PUNCT+ }
+    identifier = { (ASCII_ALPHANUMERIC | "_")+ | PUNCT+ }
 
 WSPACE = _{ " " | "\t" | "\u{000C}" | "\r" | "\n" }
 PUNCT = {

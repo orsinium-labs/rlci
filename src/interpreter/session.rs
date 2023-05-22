@@ -24,11 +24,13 @@ impl Session {
         match stmt {
             Stmt::Assign { target, expr } => {
                 let val = Value::from_expr(expr);
+                let val = val.bind(&self.global);
                 self.global.set(target, val);
                 self.global.get(target).unwrap()
             }
             Stmt::Expr { expr } => {
                 let val = Value::from_expr(expr);
+                let val = val.bind(&self.global);
                 self.global.set("_", val);
                 self.global.get("_").unwrap()
             }
