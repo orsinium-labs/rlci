@@ -44,3 +44,25 @@ impl Session {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parse;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case::id(r#"id"#, "λx x")]
+    #[case::id(r#"c = \a a a"#, "λa a a")]
+    #[case::id(r#"\a id a"#, "λa id a")]
+    fn eval_module(#[case] input: &str, #[case] exp: &str) {
+        let mut session = Session::new();
+        session.eval_module(&parse("id = λx x").unwrap()).unwrap();
+        session.eval_module(&parse("A = λa a").unwrap()).unwrap();
+        session.eval_module(&parse("B = λb b").unwrap()).unwrap();
+
+        let module = parse(input).unwrap();
+        let val = session.eval_module(&module).unwrap();
+        assert_eq!(val.repr(), exp);
+    }
+}
