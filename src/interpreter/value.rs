@@ -101,19 +101,20 @@ impl Value {
     }
 
     fn bind_local(&self, local: &LocalScope) -> Value {
+        use Value::*;
         match self {
-            Value::Def { arg, value } => Value::Def {
+            Def { arg, value } => Def {
                 arg: arg.to_string(),
                 value: value.bind_local(local).into(),
             },
-            Value::Id { name } | Value::BoundId { name, value: _ } => match local.get(name) {
-                Some(val) => Value::BoundId {
+            Id { name } | BoundId { name, value: _ } => match local.get(name) {
+                Some(val) => BoundId {
                     name: name.to_string(),
                     value: val.clone().into(),
                 },
                 None => self.clone(),
             },
-            Value::Call { target, arg } => Value::Call {
+            Call { target, arg } => Call {
                 target: target.bind_local(local).into(),
                 arg: arg.bind_local(local).into(),
             },

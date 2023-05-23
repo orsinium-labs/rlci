@@ -73,6 +73,7 @@ mod tests {
 
         let module = parse(input).unwrap();
         let val = session.eval_module(&module).unwrap();
+        println!("Input: {input}");
         assert_eq!(val.repr(), exp);
     }
 }
