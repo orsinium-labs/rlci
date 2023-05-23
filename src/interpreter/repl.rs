@@ -18,7 +18,7 @@ pub fn run_repl() {
                 match parse(&input) {
                     Ok(module) => match session.eval_module(&module) {
                         Ok(result) => println!("{}", result.repr().green()),
-                        Err(err) => println!("{}", err.to_string().red()),
+                        Err(err) => println!("{}", format!("{:?}", err).red()),
                     },
                     Err(err) => println!("{}", err.to_string().red()),
                 }

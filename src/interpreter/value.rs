@@ -1,6 +1,6 @@
+use super::{GlobalScope, LocalScope};
 use crate::ast_nodes::Expr;
-
-use super::GlobalScope;
+use anyhow::Context;
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -48,23 +48,74 @@ impl Value {
         }
     }
 
-    pub fn bind(&self, global: &GlobalScope) -> Value {
+    pub fn bind_global(&self, global: &GlobalScope) -> Value {
+        use Value::*;
+        match self {
+            Def { arg, value } => Def {
+                arg: arg.to_string(),
+                value: value.bind_global(global).into(),
+            },
+            Id { name } => match global.get(name) {
+                Some(val) => BoundId {
+                    name: name.to_string(),
+                    value: val.clone().into(),
+                },
+                None => self.clone(),
+            },
+            BoundId { name: _, value: _ } => self.clone(),
+            Call { target, arg } => Call {
+                target: target.bind_global(global).into(),
+                arg: arg.bind_global(global).into(),
+            },
+        }
+    }
+
+    pub fn eval(&self) -> anyhow::Result<Value> {
+        use Value::*;
+        Ok(match self {
+            Def { arg: _, value: _ } => self.clone(),
+            Id { name } => anyhow::bail!("unbound variable `{name}`"),
+            BoundId { name, value } => value.eval().context(format!("failure executing {name}"))?,
+            Call { target, arg } => target.call(arg).context("failure calling a function")?,
+        })
+    }
+
+    pub fn call(&self, arg_value: &Value) -> anyhow::Result<Value> {
+        use Value::*;
+        match self {
+            Def {
+                arg: arg_name,
+                value: expr,
+            } => {
+                let local = LocalScope::new(arg_name.to_string(), arg_value);
+                let expr = expr.bind_local(&local);
+                expr.eval()
+            }
+            Id { name } => anyhow::bail!("unbound variable `{name}`"),
+            BoundId { name: _, value } => value.call(arg_value),
+            Call { target, arg } => {
+                let value = target.call(arg)?;
+                value.call(arg_value)
+            }
+        }
+    }
+
+    fn bind_local(&self, local: &LocalScope) -> Value {
         match self {
             Value::Def { arg, value } => Value::Def {
                 arg: arg.to_string(),
-                value: value.bind(global).into(),
+                value: value.bind_local(local).into(),
             },
-            Value::Id { name } => match global.get(name) {
+            Value::Id { name } | Value::BoundId { name, value: _ } => match local.get(name) {
                 Some(val) => Value::BoundId {
                     name: name.to_string(),
                     value: val.clone().into(),
                 },
                 None => self.clone(),
             },
-            Value::BoundId { name: _, value: _ } => self.clone(),
             Value::Call { target, arg } => Value::Call {
-                target: target.bind(global).into(),
-                arg: arg.bind(global).into(),
+                target: target.bind_local(local).into(),
+                arg: arg.bind_local(local).into(),
             },
         }
     }

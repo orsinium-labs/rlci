@@ -39,7 +39,7 @@ impl<'p, 'v> LocalScope<'p, 'v> {
         }
     }
 
-    fn get(&self, name: &str) -> Option<&'v Value> {
+    pub fn get(&self, name: &str) -> Option<&'v Value> {
         if self.name == name {
             return Some(self.value);
         }

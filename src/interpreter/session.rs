@@ -25,7 +25,7 @@ impl Session {
             // Assignment: store the value in the global scope.
             Stmt::Assign { target, expr } => {
                 let val = Value::from_expr(expr);
-                let val = val.bind(&self.global);
+                let val = val.bind_global(&self.global);
                 Ok(self.global.set(target, val))
             }
             // Variable name: show its value.
@@ -38,7 +38,8 @@ impl Session {
             // An arbitrary expression: eagerly evaluate.
             Stmt::Expr { expr } => {
                 let val = Value::from_expr(expr);
-                let val = val.bind(&self.global);
+                let val = val.bind_global(&self.global);
+                let val = val.eval()?;
                 Ok(self.global.set("_", val))
             }
         }
@@ -53,8 +54,17 @@ mod tests {
 
     #[rstest]
     #[case::id(r#"id"#, "λx x")]
-    #[case::id(r#"c = \a a a"#, "λa a a")]
-    #[case::id(r#"\a id a"#, "λa id a")]
+    #[case::assign(r#"c = \a a a"#, "λa a a")]
+    #[case::def(r#"\a id a"#, "λa id a")]
+    #[case::call(r#"id A"#, "λa a")]
+    #[case(r#"id B"#, "λb b")]
+    #[case(r#"id A B"#, "λb b")]
+    #[case(r#"(id A) B"#, "λb b")]
+    #[case(r#"id (A B)"#, "λb b")]
+    #[case::left(r#"(\a \b a) A B"#, "λa a")]
+    #[case::right(r#"(\a \b b) A B"#, "λb b")]
+    #[case(r#"(\a \a a) A B"#, "λb b")]
+    // #[case(r#"(\a (\a a) (\x a)) A"#, "A")]
     fn eval_module(#[case] input: &str, #[case] exp: &str) {
         let mut session = Session::new();
         session.eval_module(&parse("id = λx x").unwrap()).unwrap();
