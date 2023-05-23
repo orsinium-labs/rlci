@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.71"
 clap = { version = "4.2.7", features = ["derive"] }
 colored = "2.0.0"
 pest = "2.6.0"

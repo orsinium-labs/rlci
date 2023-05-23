@@ -1,5 +1,3 @@
-use std::fmt;
-
 use crate::ast_nodes::{Expr, Module, Stmt};
 use crate::interpreter::*;
 
@@ -14,7 +12,7 @@ impl Session {
         }
     }
 
-    pub fn eval_module(&mut self, module: &Module) -> Result<&Value, EvalError> {
+    pub fn eval_module(&mut self, module: &Module) -> anyhow::Result<&Value> {
         for stmt in &module.stmts[..(module.stmts.len() - 1)] {
             self.eval_stmt(stmt)?;
         }
@@ -22,7 +20,7 @@ impl Session {
         self.eval_stmt(stmt)
     }
 
-    fn eval_stmt(&mut self, stmt: &Stmt) -> Result<&Value, EvalError> {
+    fn eval_stmt(&mut self, stmt: &Stmt) -> anyhow::Result<&Value> {
         match stmt {
             // Assignment: store the value in the global scope.
             Stmt::Assign { target, expr } => {
@@ -35,7 +33,7 @@ impl Session {
                 expr: Expr::Id { name },
             } => match self.global.get(name) {
                 Some(val) => Ok(val),
-                None => Err(EvalError(format!("variable `{name}` is not defined"))),
+                None => anyhow::bail!("variable `{name}` is not defined"),
             },
             // An arbitrary expression: eagerly evaluate.
             Stmt::Expr { expr } => {
@@ -44,14 +42,5 @@ impl Session {
                 Ok(self.global.set("_", val))
             }
         }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct EvalError(String);
-
-impl fmt::Display for EvalError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
     }
 }
