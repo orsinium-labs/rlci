@@ -1,5 +1,5 @@
 module = { SOI ~ WSPACE* ~ statement+ ~ EOI }
-statement = { ( assignment | expression) ~ WSPACE* ~ (EOI | NEWLINE) }
+statement = { ( assignment | expression) ~ (EOI | NEWLINE+) }
   assignment = { identifier ~ " "* ~ "=" ~ " "* ~ expression }
   expression = { definition | call | identifier | ( "(" ~ expression ~ ")" ) }
     call = {

@@ -4,7 +4,7 @@ add = \a \b a inc b
 mul = \a \b \c a (b c)
 pow = \a \b b a
 
-dec = \n \f \x n (\g \h h (g f)) (\_ x)(IDENTITY)
+dec = \n \f \x n (\g \h h (g f)) (\_ x) (\x x)
 sub = \a \b b dec a
 diff = \a \b add (sub a b) (sub b a)
 

@@ -9,7 +9,8 @@ pub fn read_stdlib() -> anyhow::Result<Vec<Module>> {
     let mut modules: Vec<Module> = Vec::new();
     for file in STDLIB_DIR.files() {
         let content = file.contents_utf8().unwrap();
-        let module = parse(content).context("failed to parse module")?;
+        let emsg = format!("failed to parse {:?} module", file.path());
+        let module = parse(content).context(emsg)?;
         modules.push(module);
     }
     Ok(modules)
