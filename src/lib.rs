@@ -12,10 +12,12 @@ pub mod interpreter {
     mod repl;
     mod scope;
     mod session;
+    mod stdlib;
     mod value;
 
     pub use repl::run_repl;
     pub use scope::{GlobalScope, LocalScope};
     pub use session::Session;
+    pub use stdlib::read_stdlib;
     pub use value::Value;
 }

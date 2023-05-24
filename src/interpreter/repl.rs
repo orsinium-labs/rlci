@@ -10,6 +10,10 @@ pub fn run_repl() {
         println!("{}", "No previous history.".yellow());
     }
     let mut session = Session::new();
+    if let Err(err) = session.load_stdlib() {
+        let msg = format!("{:?}", err.context("failed to load stdlib"));
+        println!("{}", msg.red());
+    }
     loop {
         let readline = rl.readline(">>> ");
         match readline {

@@ -7,6 +7,7 @@ edition = "2021"
 anyhow = "1.0.71"
 clap = { version = "4.2.7", features = ["derive"] }
 colored = "2.0.0"
+include_dir = "0.7.3"
 pest = "2.6.0"
 pest_derive = "2.6.0"
 rustyline = "11.0.0"

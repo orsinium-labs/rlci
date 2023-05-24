@@ -1,4 +1,4 @@
-module = { SOI ~ statement+ ~ EOI }
+module = { SOI ~ WSPACE* ~ statement+ ~ EOI }
 statement = { ( assignment | expression) ~ WSPACE* ~ (EOI | NEWLINE) }
   assignment = { identifier ~ " "* ~ "=" ~ " "* ~ expression }
   expression = { definition | call | identifier | ( "(" ~ expression ~ ")" ) }

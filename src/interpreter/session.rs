@@ -1,3 +1,5 @@
+use anyhow::Context;
+
 use crate::ast_nodes::{Expr, Module, Stmt};
 use crate::interpreter::*;
 
@@ -10,6 +12,13 @@ impl Session {
         Self {
             global: GlobalScope::new(),
         }
+    }
+
+    pub fn load_stdlib(&mut self) -> anyhow::Result<()> {
+        for module in read_stdlib()? {
+            self.eval_module(&module).context("failed to eval module")?;
+        }
+        Ok(())
     }
 
     pub fn eval_module(&mut self, module: &Module) -> anyhow::Result<&Value> {
