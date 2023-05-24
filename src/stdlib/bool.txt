@@ -8,3 +8,6 @@ false = \a \b b
 or = \a \b a true b
 and = \a \b a b false
 not = \a false true
+
+xor = \a \b a (b false true) (b true false)
+xnor = \a \b not (xor a b)
