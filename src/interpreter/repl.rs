@@ -1,4 +1,4 @@
-use crate::interpreter::{LangHinter, Session};
+use crate::interpreter::{AutoCompleter, Session};
 use crate::parse;
 use colored::Colorize;
 use rustyline::error::ReadlineError;
@@ -6,13 +6,13 @@ use rustyline::history::FileHistory;
 use rustyline::Editor;
 
 pub fn run_repl() {
-    let hinter = LangHinter::new();
-    let mut rl: Editor<&LangHinter, FileHistory> = Editor::new().unwrap();
-    rl.set_helper(Some(&hinter));
+    let completer = AutoCompleter::new();
+    let mut rl: Editor<&AutoCompleter, FileHistory> = Editor::new().unwrap();
+    rl.set_helper(Some(&completer));
     if rl.load_history("history.txt").is_err() {
         println!("{}", "No previous history.".yellow());
     }
-    let mut session = Session::new(&hinter);
+    let mut session = Session::new(&completer);
     if let Err(err) = session.load_stdlib() {
         let msg = format!("{:?}", err.context("failed to load stdlib"));
         println!("{}", msg.red());

@@ -5,14 +5,14 @@ use crate::interpreter::*;
 
 pub struct Session<'a> {
     global: GlobalScope,
-    hinter: &'a LangHinter,
+    completer: &'a AutoCompleter,
 }
 
 impl<'a> Session<'a> {
-    pub fn new(hinter: &'a LangHinter) -> Self {
+    pub fn new(completer: &'a AutoCompleter) -> Self {
         Self {
             global: GlobalScope::new(),
-            hinter,
+            completer,
         }
     }
 
@@ -37,7 +37,7 @@ impl<'a> Session<'a> {
             Stmt::Assign { target, expr } => {
                 let val = Value::from_expr(expr);
                 let val = val.bind_global(&self.global);
-                self.hinter.add(target);
+                self.completer.add(target);
                 Ok(self.global.set(target, val))
             }
             // Variable name: show its value.
@@ -79,7 +79,7 @@ mod tests {
     #[case(r#"(\a (\a a) (\x a)) A"#, "λx A")]
     #[case(r#"(\a (\a a) (\x a)) A B"#, "λa a")]
     fn eval_module(#[case] input: &str, #[case] exp: &str) {
-        let hinter = LangHinter::new();
+        let hinter = AutoCompleter::new();
         let mut session = Session::new(&hinter);
         session.eval_module(&parse("id = λx x").unwrap()).unwrap();
         session.eval_module(&parse("A = λa a").unwrap()).unwrap();

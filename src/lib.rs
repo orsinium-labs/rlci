@@ -9,14 +9,14 @@ mod parser;
 pub use parser::{parse, LangParser};
 
 pub mod interpreter {
-    mod hints;
+    mod autocompleter;
     mod repl;
     mod scope;
     mod session;
     mod stdlib;
     mod value;
 
-    pub use hints::LangHinter;
+    pub use autocompleter::AutoCompleter;
     pub use repl::run_repl;
     pub use scope::{GlobalScope, LocalScope};
     pub use session::Session;

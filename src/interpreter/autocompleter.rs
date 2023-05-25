@@ -4,11 +4,11 @@ use std::collections::HashSet;
 use rustyline::hint::Hint;
 use rustyline::Context;
 
-pub struct LangHinter {
+pub struct AutoCompleter {
     hints: RefCell<HashSet<CommandHint>>,
 }
 
-impl LangHinter {
+impl AutoCompleter {
     pub fn new() -> Self {
         Self {
             hints: HashSet::new().into(),
@@ -21,32 +21,36 @@ impl LangHinter {
     }
 }
 
-impl rustyline::validate::Validator for LangHinter {}
-impl rustyline::highlight::Highlighter for LangHinter {}
-impl rustyline::Helper for LangHinter {}
+impl rustyline::validate::Validator for AutoCompleter {}
+impl rustyline::highlight::Highlighter for AutoCompleter {}
+impl rustyline::Helper for AutoCompleter {}
 
-impl rustyline::completion::Completer for LangHinter {
+impl rustyline::completion::Completer for AutoCompleter {
     type Candidate = CommandHint;
-}
 
-impl rustyline::hint::Hinter for LangHinter {
-    type Hint = CommandHint;
-
-    fn hint(&self, line: &str, pos: usize, _ctx: &Context<'_>) -> Option<CommandHint> {
+    fn complete(
+        &self,
+        line: &str,
+        pos: usize,
+        _ctx: &Context<'_>,
+    ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
+        let mut res: Vec<CommandHint> = Vec::new();
         if line.is_empty() || pos < line.len() {
-            return None;
+            return Ok((pos, res));
         }
 
-        self.hints.borrow().iter().find_map(|hint| {
-            // expect hint after word complete, like redis cli, add condition:
-            // line.ends_with(" ")
-            if hint.display().starts_with(line) {
-                Some(hint.suffix(pos))
-            } else {
-                None
+        let (_, word) = line.rsplit_once(' ').unwrap_or(("", line));
+        for hint in self.hints.borrow().iter() {
+            if hint.display().starts_with(word) {
+                res.push(hint.suffix(word.len()))
             }
-        })
+        }
+        Ok((pos, res))
     }
+}
+
+impl rustyline::hint::Hinter for AutoCompleter {
+    type Hint = CommandHint;
 }
 
 #[derive(Hash, Debug, PartialEq, Eq)]
