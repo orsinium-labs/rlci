@@ -73,7 +73,7 @@ mod tests {
     #[case::left(r#"(\a \b a) A B"#, "λa a")]
     #[case::right(r#"(\a \b b) A B"#, "λb b")]
     #[case(r#"(\a \a a) A B"#, "λb b")]
-    #[case(r#"(\a (\a a) (\x a)) A"#, "λx a")]
+    #[case(r#"(\a (\a a) (\x a)) A"#, "λx A")]
     #[case(r#"(\a (\a a) (\x a)) A B"#, "λa a")]
     fn eval_module(#[case] input: &str, #[case] exp: &str) {
         let mut session = Session::new();

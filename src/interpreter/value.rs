@@ -6,7 +6,8 @@ use anyhow::Context;
 pub enum Value {
     Def { arg: String, value: Box<Value> },
     Id { name: String },
-    BoundId { name: String, value: Box<Value> },
+    GlobalId { name: String, value: Box<Value> },
+    LocalId { name: String, value: Box<Value> },
     Call { target: Box<Value>, arg: Box<Value> },
 }
 
@@ -33,7 +34,8 @@ impl Value {
                 format!("λ{arg} {}", value.repr())
             }
             Value::Id { name } => name.to_string(),
-            Value::BoundId { name, value: _ } => name.to_string(),
+            Value::GlobalId { name, value: _ } => name.to_string(),
+            Value::LocalId { name: _, value } => value.repr(),
             Value::Call { target, arg } => {
                 let mut tr = target.repr();
                 let mut ar = arg.repr();
@@ -56,13 +58,13 @@ impl Value {
                 value: value.bind_global(global).into(),
             },
             Id { name } => match global.get(name) {
-                Some(val) => BoundId {
+                Some(val) => GlobalId {
                     name: name.to_string(),
                     value: val.clone().into(),
                 },
                 None => self.clone(),
             },
-            BoundId { name: _, value: _ } => self.clone(),
+            GlobalId { name: _, value: _ } | LocalId { name: _, value: _ } => self.clone(),
             Call { target, arg } => Call {
                 target: target.bind_global(global).into(),
                 arg: arg.bind_global(global).into(),
@@ -75,7 +77,9 @@ impl Value {
         Ok(match self {
             Def { arg: _, value: _ } => self.clone(),
             Id { name } => anyhow::bail!("unbound variable `{name}`"),
-            BoundId { name, value } => value.eval().context(format!("failure executing {name}"))?,
+            GlobalId { name, value } | LocalId { name, value } => {
+                value.eval().context(format!("failure executing {name}"))?
+            }
             Call { target, arg } => target.call(arg).context("failure calling a function")?,
         })
     }
@@ -92,7 +96,7 @@ impl Value {
                 expr.eval()
             }
             Id { name } => anyhow::bail!("unbound variable `{name}`"),
-            BoundId { name: _, value } => value.call(arg_value),
+            LocalId { name: _, value } | GlobalId { name: _, value } => value.call(arg_value),
             Call { target, arg } => {
                 let value = target.call(arg)?;
                 value.call(arg_value)
@@ -107,13 +111,15 @@ impl Value {
                 arg: arg.to_string(),
                 value: value.bind_local(local).into(),
             },
-            Id { name } | BoundId { name, value: _ } => match local.get(name) {
-                Some(val) => BoundId {
-                    name: name.to_string(),
-                    value: val.clone().into(),
-                },
-                None => self.clone(),
-            },
+            Id { name } | LocalId { name, value: _ } | GlobalId { name, value: _ } => {
+                match local.get(name) {
+                    Some(val) => LocalId {
+                        name: name.to_string(),
+                        value: val.clone().into(),
+                    },
+                    None => self.clone(),
+                }
+            }
             Call { target, arg } => Call {
                 target: target.bind_local(local).into(),
                 arg: arg.bind_local(local).into(),
