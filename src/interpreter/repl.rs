@@ -1,15 +1,18 @@
-use crate::interpreter::Session;
+use crate::interpreter::{LangHinter, Session};
 use crate::parse;
 use colored::Colorize;
 use rustyline::error::ReadlineError;
-use rustyline::DefaultEditor;
+use rustyline::history::FileHistory;
+use rustyline::Editor;
 
 pub fn run_repl() {
-    let mut rl = DefaultEditor::new().unwrap();
+    let hinter = LangHinter::new();
+    let mut rl: Editor<&LangHinter, FileHistory> = Editor::new().unwrap();
+    rl.set_helper(Some(&hinter));
     if rl.load_history("history.txt").is_err() {
         println!("{}", "No previous history.".yellow());
     }
-    let mut session = Session::new();
+    let mut session = Session::new(&hinter);
     if let Err(err) = session.load_stdlib() {
         let msg = format!("{:?}", err.context("failed to load stdlib"));
         println!("{}", msg.red());

@@ -3,14 +3,16 @@ use anyhow::Context;
 use crate::ast_nodes::{Expr, Module, Stmt};
 use crate::interpreter::*;
 
-pub struct Session {
+pub struct Session<'a> {
     global: GlobalScope,
+    hinter: &'a LangHinter,
 }
 
-impl Session {
-    pub fn new() -> Self {
+impl<'a> Session<'a> {
+    pub fn new(hinter: &'a LangHinter) -> Self {
         Self {
             global: GlobalScope::new(),
+            hinter,
         }
     }
 
@@ -35,6 +37,7 @@ impl Session {
             Stmt::Assign { target, expr } => {
                 let val = Value::from_expr(expr);
                 let val = val.bind_global(&self.global);
+                self.hinter.add(target);
                 Ok(self.global.set(target, val))
             }
             // Variable name: show its value.
@@ -76,7 +79,8 @@ mod tests {
     #[case(r#"(\a (\a a) (\x a)) A"#, "λx A")]
     #[case(r#"(\a (\a a) (\x a)) A B"#, "λa a")]
     fn eval_module(#[case] input: &str, #[case] exp: &str) {
-        let mut session = Session::new();
+        let hinter = LangHinter::new();
+        let mut session = Session::new(&hinter);
         session.eval_module(&parse("id = λx x").unwrap()).unwrap();
         session.eval_module(&parse("A = λa a").unwrap()).unwrap();
         session.eval_module(&parse("B = λb b").unwrap()).unwrap();
