@@ -89,10 +89,14 @@ mod tests {
 
     #[rstest]
     #[case::id(r#"id"#, "id")]
+    #[case::space(r#"  id"#, "id")]
+    #[case::space(r#"id  "#, "id")]
     #[case::call(r#"id x"#, "call(id, id)")]
     #[case::def(r#"\x x"#, "def(id)")]
     #[case::def(r#"λx x"#, "def(id)")]
     #[case::assign(r#"id = \x x"#, "let(def(id))")]
+    #[case::assign(r#"id = (\x x)"#, "let(def(id))")]
+    #[case::assign(r#"& = \a a"#, "let(def(id))")]
     #[case(r#"id= \x x"#, "let(def(id))")]
     #[case(r#"id =\x x"#, "let(def(id))")]
     #[case(r#"id=\x x"#, "let(def(id))")]
@@ -121,6 +125,9 @@ mod tests {
     #[case(r#"a \x"#)]
     #[case(r#"id = "#)]
     #[case(r#"id = \x"#)]
+    #[case(r#"(a)"#)]
+    #[case(r#"(((\a a)))"#)]
+    #[case(r#"\a a \b b a"#)]
     fn smoke_parse_stmt_err(#[case] input: &str) {
         assert!(parse(input).is_err());
     }

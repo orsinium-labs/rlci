@@ -4,6 +4,12 @@ use rlci::parse;
 
 use std::io::{stdin, BufRead};
 
+// Clap is a Rust library for making nice CLI tools.
+// It has a few methods for describing the interface you want.
+// Here I use the "derive" approach described here:
+//
+// https://docs.rs/clap/latest/clap/_derive/index.html
+//
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]

@@ -1,23 +1,183 @@
+// ---
+// This file describes the PEG grammar for the language
+// that is used by `pest` Rust library to generate the parser.
+//
+// https://pest.rs/book/intro.html
+//
+// Pest is quite poorly documented, considering the amount of features
+// and corner cases, but it was good enough for me to figure out in just
+// a few hours a working grammar.
+// ---
+
+// The module rule is the entry point for the parser.
+// It is the rule for the whole input.
+//
+// A module is a sequence of one or more statements.
+// An empty input is not a valid module because it often indicates
+// an mistake from the user side (wrong input). Also, allowing an empty module
+// raises the question about what should be the result of evaluating it.
+// For any non-empty module, there is always either a result or an error.
+//
+// SOI and EOI are built-in pest rules maning "start of input"
+// and "end of input" respectively. If we don't use them, pest will parse
+// whatever it can and silently discard the rest. But since we use them,
+// the whole input is required to be a valid module.
+//
+// We also allow an arbitrary (zero or more) number of whitespace literals
+// at the beginning of the input. Pest has a built-in way to allow spaces
+// everywhere implicitly, but we're better to not use it an allow spaces
+// explicitly where we want to. Our grammar is short, so it's not hard to do,
+// and whitespace-sensitive.
 module = { SOI ~ WSPACE* ~ statement+ ~ EOI }
-statement = { ( assignment | expression) ~ " "* ~ (EOI | NEWLINE+) }
+
+// A statement is a single line of the input.
+// It can be either an assignment or any expression.
+//
+// Statements are separated by newlines, so each statement must end
+// either with a newline or with end of input (when that's the last
+// statement in the input and there is no trailing newline).
+//
+// We also allow trailing spaces, and then after the newline it can have any
+// whitespace literals, like multiple empty lines, or lines with only spaces in them.
+// That also means we allow (and drop) spaces before statements, so you can indent
+// them however you like. Spaces before the n+1'th statement are consumed by
+// the `WSPACE*` at the end of the n'th statement, and spaces before the first statement
+// are consumed by `WSPACE*` of the `module`.
+statement = { ( assignment | expression) ~ " "* ~ (EOI | NEWLINE) ~ WSPACE* }
+
+  // Assignment binds an expression to a name in the global scope.
+  // The classic lambda calculus doesn't have it but that's an important convenience
+  // For reusing code.
+  //
+  // An asignment looks like `name = expr`, spaces being optional (or many).
+  //
+  // Since assignment accepts any expression, you can use it to define functions,
+  // create aliases, or reuse an arbitrary expression.
+  //
+  // It can appear only on the module-level. Making it an expression that can
+  // appear anywhere would make it confusing to which scope the variable gets bind.
+  // And just generally confusing to read. I have no respect for walrus operator
+  // in Python.
   assignment = { identifier ~ " "* ~ "=" ~ " "* ~ expression }
-  expression = { definition | call | identifier | ( "(" ~ expression ~ ")" ) }
+
+  // An expression is either:
+  //
+  // 1. a definition of a lambda function ("abstraction"),
+  // 2. a call ("application") of a lambda function,
+  // 3. an identifier which either points to a local variable or to a global name,
+  // 4. or a definition or a call inside of braces.
+  //
+  // We could allow an arbitrary expression inside of braces, but then it would
+  // allow some whacky inputs. Namely:
+  //
+  // 1. Multiple useless braces: `((\x x))`.
+  // 2. braces around a single identifier: `(x)`.
+  //
+  // In a real-world languages, you might want to allow such cases
+  // (and in general, parse everything you can possibly parse) and let linters
+  // and code formatters to take care of strange-looking inputs.
+  expression = { definition | call | identifier | ( "(" ~ (definition | call) ~ ")" ) }
+
+    // Call a lambda function with an argument.
+    // Or "application", as smart people call it.
+    //
+    // Strictly speaking, every lambda function accepts only one argument,
+    // so the `call` rule should consist of only 2 parts: "target" and "argument".
+    // And this is precisely how it is represented in the final AST (`Expr::Call` node).
+    // Yet, here we allow it to have an arbitrary (1 or more) number of arguments.
+    // Why so?
+    //
+    // The problem is that the call is left-associative.
+    // That means, `a b c` must be equivalent to `(a b) c`, not `a (b c)`.
+    // In other words, we first call `a` with `b` and then call the result with `c`.
+    //
+    // 1. If we allow only one argument and that argument to be any expression,
+    //    including another call, that would be parsed as `a (b c)`.
+    // 2. If we allow call (or an arbitrary expression) to be the "target",
+    //    pest will explode. PEG doesn't support left recursion quite well,
+    //    and so you should avoid it.
+    // 3. If we don't allow call on either side, `a b c` simply cannot be parsed.
+    //
+    // So, all we are left with is to allow the call to have an arbitrary number of
+    // arguments.
+    //
+    // To avoid ambiguity, both the target and argument are equivalent to
+    // the expressions EXCEPT we do not allow a `call` or a `definition`
+    // without braces. This is because they have spaces.
+    //
+    // For example:                 \a a \b b a
+    // That could be parsed as:     \a a ((\b b) a)
+    // Or as:                       \a (a (\b b)) a
+    // Or even:                     \a a (\b (b a))
+    //
+    // So, we make it illegal. If you want to use a `def` inside of `call`,
+    // add braces to show what you mean.
+    //
+    // Perhaps, that's why LISP has so many braces.
     call = {
-        ( identifier | ( "(" ~ expression ~ ")" ) )
+        ( identifier | ( "(" ~ (definition | call) ~ ")" ) )
         ~ (
             " "+
-            ~ ( identifier | ( "(" ~ expression ~ ")" ) )
+            ~ ( identifier | ( "(" ~ (definition | call) ~ ")" ) )
         )+
     }
+
+    // A definition of a lambda function.
+    //
+    // The lambda calculus expression `λa.a` in our language can be represented as
+    // `λa a` or `\a a`. I don't see the point in keeping the dot here.
+    // Even more, using dot woul make it look like `λa.a b` means `(λa.a) b`
+    // while in fact it is `λa.(a b)`. Using space instead makes it more clear.
     definition = { ("\\" | "λ") ~ identifier ~ " "+ ~ expression }
+
+    // The identifier (variable) is a name of a lambda function argument
+    // or a global binding.
+    //
+    // It can be either an alphanumeric word (`[a-zA-Z0-9_]+`)
+    // or 1+ math or ASCII symbols. We don't allow mixing symbols with alphanum
+    // because `-1` and `- 1` being different thing is confusing.
+    // Again, that's something that you might want to leave to linters.
+    //
+    // Also, if you want to improve the grammar, you might want to have 2
+    // types of identifiers and fobid using symbols for function arguments.
     identifier = { (ASCII_ALPHANUMERIC | "_")+ | PUNCT+ }
 
+// Below are a few tokens. Tokens do not appear in the final AST.
+// They are helpers fore defining other rules above.
+//
+// Pest recognizes the rules by having SCREAMING_SNAKE_CASE name.
+//
+// I use names `WSPACE` and `PUNCT` instead of `WHITESPACE` and `PUNCTUATION`
+// respectively to avoid conflicts with the built-in pest rules.
+// Especially with `WHITESPACE` because if you name a rule like this,
+// pest will automatically insert it into every rule. And we don't want that.
+//
+// https://pest.rs/book/grammars/syntax.html#implicit-whitespace
+//
+// The `_` prefix for the group makes sure it gets inlined
+// and doesn't appear in any messages. For example, if you type just `\`
+// without an identifier, the error message with `_` will be "expected identifier"
+// but without `_` present it will say "expected PUNCT" instead.
+//
 WSPACE = _{ " " | "\t" | "\u{000C}" | "\r" | "\n" }
-PUNCT = {
-    // there is no `=` yet because it might be ambiguous when assigning to it
-    "!" | "#" | "$" | "%" | "&" | "*" | "+" | "-" |
-    "/" | "<" | ">" | "?" | "@" | "^" | "~" | "|" |
-    // allow unicode math symbols
+PUNCT = _{
+    // There is no `=` yet because it might be ambiguous in some situations
+    // since we use `=` for assignment.
+    //
+    // For example, `= = a` is assigning of `a` to `=`,
+    // and `== a` is calling `==` with argument `a`.
+    //
+    // While the parser can handle it just fine, I expect it to be confusing to read.
+    // Probably, that's why Haskell requires parenthesis around the operator name
+    // when defining an operator (or using an infix form).
+    //
+    // We also reserve `#` for for defining comments.
+    "!" | "$" | "%" | "&" | "*" | "+" | "-" | "/" |
+    "<" | ">" | "?" | "@" | "^" | "~" | "|" |
+    // Allow unicode math symbols.
     // https://en.wikipedia.org/wiki/Mathematical_operators_and_symbols_in_Unicode
+    //
+    // Here we use the syntax for specifying a range of symbols:
+    // https://pest.rs/book/grammars/syntax.html#terminals
     '\u{2200}'..'\u{22FF}'
 }
