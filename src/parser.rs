@@ -3,12 +3,32 @@ use pest::error::Error;
 use pest::iterators::Pair;
 use pest::Parser;
 
+// This `derive` is the macro magic that generates the parser from the gramar file.
 #[derive(Parser)]
 #[grammar = "grammar.pest"]
 pub struct LangParser;
 
 #[allow(clippy::result_large_err)]
 pub fn parse(input: &str) -> Result<Module, Error<Rule>> {
+    // The `Rule` enum is generated from the grammar by the `derive(Parser)` above.
+    // It lists all rules specified in the grammar.
+    // The `parse` method accepts the root rule, which is the `module` in our case.
+    //
+    // Since the grammar for the module requires the module to have
+    // at least one statement, we know that the Ok parse result has at least one item,
+    // and so `next().unwrap()` will not panic. The pest documentation suggests
+    // doing in the code this kind of assumptions based on the grammar.
+    // This may still panic if the assumption I made is wrong (and it's still somehow
+    // possible to get an empty module) or the grammar gets changed.
+    //
+    // If that worries you, you can handle such situations explicitly
+    // or use [nom] instead which is a very type-safe library for writing parsers.
+    // I used nom for the first implementation of the parser but then decided to
+    // rewerite it to pest. The reason is that it's quite hard to work with nom,
+    // resulting signatures are monstrouous, grammar is hard to read,
+    // and error messages aren't particularly friendly.
+    //
+    // [nom]: https://github.com/rust-bakery/nom
     let root = LangParser::parse(Rule::module, input)?.next().unwrap();
     Ok(parse_module(root))
 }
