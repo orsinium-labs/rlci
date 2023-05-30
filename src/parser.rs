@@ -35,6 +35,9 @@ pub fn parse(input: &str) -> Result<Module, Error<Rule>> {
 
 fn parse_module(root: Pair<Rule>) -> Module {
     let mut stmts: Vec<Stmt> = Vec::new();
+    // The Pair.into_inner method returns an iterator over the rules
+    // inside of the given rule. In this case, it iterates over statements
+    // extracted by `statement+` part of the `module` rule.
     for subpair in root.into_inner() {
         if let Some(stmt) = parse_statement(subpair) {
             stmts.push(stmt)
@@ -46,24 +49,46 @@ fn parse_module(root: Pair<Rule>) -> Module {
 fn parse_statement(root: Pair<Rule>) -> Option<Stmt> {
     match root.as_rule() {
         Rule::statement => {
+            // The statement includes only one subpair, either an assignment
+            // or an expression. We parse it recursively.
             let subpair = root.into_inner().next().unwrap();
             parse_statement(subpair)
         }
+
         Rule::assignment => {
+            // The assignment rule has exactly 2 pairs: the target and the expression.
             let mut subpairs = root.into_inner();
             let p1 = subpairs.next().unwrap();
             let p2 = subpairs.next().unwrap();
             Some(Stmt::Assign {
-                target: p1.as_str().to_owned(),
+                // I clone the string here because I don't want to deal with lifetimes.
+                // Otherwise, we'd have to ensure that the user input is lives as long
+                // (or longer) as the parsed AST.
+                target: p1.as_str().to_string(),
                 expr: Box::new(parse_expression(p2)),
             })
         }
+
         Rule::expression => {
             let subpair = root.into_inner().next().unwrap();
             let expr = parse_expression(subpair);
             Some(Stmt::Expr { expr })
         }
+
+        // For some reason, pest included EOI in the list of generated rules
+        // as soon as I wrapped it into `()`. The presence of this rule
+        // is the sole reason why `parse_statement` returns and `Option`.
+        //
+        // It's possible that some other cases in the future will also return `None`.
+        // For example, if you consider comments a statement and don't silence the token.
         Rule::EOI => None,
+
+        // If you don't add an explicit catch-all branch for `match`,
+        // Rust will report that the match isn't exhaustive because `Rule`
+        // includes all the rules in the grammar, while `parse_statement`
+        // handles only the rules inside of the `statement` rule.
+        // Similar to `unwrap` cases in this file, this may panic
+        // if the grammar is updated or the assumption about the grammar is wrong.
         _ => unreachable!(),
     }
 }
