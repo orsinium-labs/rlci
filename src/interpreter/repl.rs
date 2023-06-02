@@ -22,13 +22,14 @@ pub fn run_repl() {
         match readline {
             Ok(input) => {
                 rl.add_history_entry(&input).unwrap();
-                match parse(&input) {
+                let res = match parse(&input) {
                     Ok(module) => match session.eval_module(&module) {
-                        Ok(result) => println!("{}", result.repr().green()),
-                        Err(err) => println!("{}", format!("{:?}", err).red()),
+                        Ok(result) => result.repr().green(),
+                        Err(err) => format!("{:?}", err).red(),
                     },
-                    Err(err) => println!("{}", err.to_string().red()),
-                }
+                    Err(err) => err.to_string().red(),
+                };
+                println!("{}", res);
             }
             Err(ReadlineError::Interrupted) => {
                 println!("{}", "CTRL-C".yellow());

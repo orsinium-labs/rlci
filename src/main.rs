@@ -1,5 +1,7 @@
 use clap::{Parser, Subcommand};
+use colored::Colorize;
 use rlci::interpreter::run_repl;
+use rlci::interpreter::{AutoCompleter, Session};
 use rlci::parse;
 
 use std::io::{stdin, BufRead};
@@ -22,6 +24,8 @@ struct Cli {
 enum Commands {
     /// Parse a module and print its AST.
     Parse,
+    /// Eval a module and print the last expression result.
+    Eval,
     /// Run interactive REPL.
     Repl,
 }
@@ -29,18 +33,45 @@ enum Commands {
 fn main() {
     let cli = Cli::parse();
     match &cli.command {
-        Commands::Parse => {
-            let mut input = String::new();
-            for line in stdin().lock().lines() {
-                input.extend(line);
-            }
-            cmd_parse(&input);
-        }
+        Commands::Parse => cmd_parse(&read_stdin()),
+        Commands::Eval => cmd_eval(&read_stdin()),
         Commands::Repl => run_repl(),
     }
 }
 
-fn cmd_parse(input: &str) {
-    let res = parse(input);
-    println!("{:#?}", res);
+fn read_stdin() -> String {
+    let mut input = String::new();
+    for line in stdin().lock().lines() {
+        input.extend(line);
+        input.push('\n');
+    }
+    input
+}
+
+fn cmd_parse(input: &str) -> ! {
+    let (code, msg) = match parse(input) {
+        Ok(module) => (0, format!("{:#?}", module).green()),
+        Err(err) => (3, err.to_string().red()),
+    };
+    println!("{}", msg);
+    std::process::exit(code);
+}
+
+fn cmd_eval(input: &str) -> ! {
+    let completer = AutoCompleter::new();
+    let mut session = Session::new(&completer);
+    if let Err(err) = session.load_stdlib() {
+        let msg = format!("{:?}", err.context("failed to load stdlib"));
+        println!("{}", msg.red());
+        std::process::exit(1);
+    }
+    let (code, msg) = match parse(input) {
+        Ok(module) => match session.eval_module(&module) {
+            Ok(result) => (0, result.repr().green()),
+            Err(err) => (2, format!("{:?}", err).red()),
+        },
+        Err(err) => (3, err.to_string().red()),
+    };
+    println!("{}", msg);
+    std::process::exit(code);
 }
