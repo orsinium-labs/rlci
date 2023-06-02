@@ -24,6 +24,8 @@ mod tests {
 
     const T: &str = "λa λb a";
     const F: &str = "λa λb b";
+    const ONE: &str = "λa a";
+    const TWO: &str = "λa λb a (a b)";
 
     #[rstest]
     #[case::id(r#"id"#, "λa a")]
@@ -91,6 +93,15 @@ mod tests {
     #[case::fib(r#"eq (fib 3) 2"#, T)]
     #[case::fib(r#"eq (fib 4) 3"#, T)]
     #[case::fib(r#"eq (fib 5) 5"#, T)]
+    // pair
+    #[case::car(r#"car (cons 1 2)"#, ONE)]
+    #[case::cdr(r#"cdr (cons 1 2)"#, TWO)]
+    // list
+    #[case::is_empty(r#"is_empty empty_list"#, T)]
+    #[case::is_empty(r#"is_empty (prepend empty_list 2)"#, F)]
+    #[case::head(r#"head (prepend empty_list 2)"#, TWO)]
+    #[case::tail(r#"is_empty (tail (prepend empty_list 2))"#, T)]
+    #[case(r#"head (prepend (prepend empty_list 3) 2)"#, TWO)]
     fn stdlib(#[case] input: &str, #[case] exp: &str) {
         let hinter = AutoCompleter::new();
         let mut session = Session::new(&hinter);

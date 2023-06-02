@@ -1,0 +1,10 @@
+
+cons = \a \b \c c a b
+car = \p p true
+cdr = \p p false
+
+empty_list = cons true true
+prepend = \xs \x cons false (cons x xs)
+is_empty = \xs car xs
+head = \xs car (cdr xs)
+tail = \xs cdr (cdr xs)
