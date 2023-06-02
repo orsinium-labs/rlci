@@ -82,6 +82,15 @@ mod tests {
     #[case::gte(r#"gte 2 5"#, F)]
     #[case::gte(r#"gte 5 2"#, T)]
     #[case::gte(r#"gte 2 2"#, T)]
+    // rec
+    #[case::fac(r#"eq (fac 2) 2"#, T)]
+    #[case::fac(r#"eq (fac 3) 6"#, T)]
+    // #[case::fac(r#"eq (fac 4) (mul 6 4)"#, T)]
+    #[case::fib(r#"eq (fib 1) 1"#, T)]
+    #[case::fib(r#"eq (fib 2) 1"#, T)]
+    #[case::fib(r#"eq (fib 3) 2"#, T)]
+    #[case::fib(r#"eq (fib 4) 3"#, T)]
+    #[case::fib(r#"eq (fib 5) 5"#, T)]
     fn stdlib(#[case] input: &str, #[case] exp: &str) {
         let hinter = AutoCompleter::new();
         let mut session = Session::new(&hinter);
