@@ -16,10 +16,10 @@ pub mod interpreter {
     mod stdlib;
     mod value;
 
-    pub use helper::Helper;
+    pub(crate) use helper::Helper;
     pub use repl::run_repl;
-    pub use scope::{GlobalScope, LocalScope};
+    pub(crate) use scope::{GlobalScope, LocalScope};
     pub use session::Session;
-    pub use stdlib::read_stdlib;
-    pub use value::Value;
+    pub(crate) use stdlib::read_stdlib;
+    pub(crate) use value::Value;
 }

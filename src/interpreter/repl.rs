@@ -5,6 +5,7 @@ use rustyline::error::ReadlineError;
 use rustyline::history::FileHistory;
 use rustyline::Editor;
 
+/// Run interactive rustyline-powered REPL.
 pub fn run_repl() {
     let helper = Helper::new();
     let mut rl: Editor<&Helper, FileHistory> = Editor::new().unwrap();
