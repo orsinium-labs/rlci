@@ -5,11 +5,11 @@ use std::borrow::Cow;
 use std::cell::RefCell;
 use std::collections::HashSet;
 
-pub struct AutoCompleter {
+pub struct Helper {
     hints: RefCell<HashSet<CommandHint>>,
 }
 
-impl AutoCompleter {
+impl Helper {
     pub fn new() -> Self {
         Self {
             hints: HashSet::new().into(),
@@ -22,10 +22,10 @@ impl AutoCompleter {
     }
 }
 
-impl rustyline::validate::Validator for AutoCompleter {}
-impl rustyline::Helper for AutoCompleter {}
+impl rustyline::validate::Validator for Helper {}
+impl rustyline::Helper for Helper {}
 
-impl rustyline::highlight::Highlighter for AutoCompleter {
+impl rustyline::highlight::Highlighter for Helper {
     fn highlight<'l>(&self, line: &'l str, pos: usize) -> Cow<'l, str> {
         let _ = pos;
 
@@ -54,7 +54,7 @@ impl rustyline::highlight::Highlighter for AutoCompleter {
     }
 }
 
-impl rustyline::completion::Completer for AutoCompleter {
+impl rustyline::completion::Completer for Helper {
     type Candidate = CommandHint;
 
     fn complete(
@@ -78,7 +78,7 @@ impl rustyline::completion::Completer for AutoCompleter {
     }
 }
 
-impl rustyline::hint::Hinter for AutoCompleter {
+impl rustyline::hint::Hinter for Helper {
     type Hint = CommandHint;
 }
 

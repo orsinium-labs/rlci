@@ -103,8 +103,7 @@ mod tests {
     #[case::tail(r#"is_empty (tail (prepend empty_list 2))"#, T)]
     #[case(r#"head (prepend (prepend empty_list 3) 2)"#, TWO)]
     fn stdlib(#[case] input: &str, #[case] exp: &str) {
-        let hinter = AutoCompleter::new();
-        let mut session = Session::new(&hinter);
+        let mut session = Session::new(None);
         session.load_stdlib().unwrap();
         let module = parse(input).unwrap();
         let val = session.eval_module(&module).unwrap();

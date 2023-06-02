@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use colored::Colorize;
 use rlci::interpreter::run_repl;
-use rlci::interpreter::{AutoCompleter, Session};
+use rlci::interpreter::Session;
 use rlci::parse;
 
 use std::io::{stdin, BufRead};
@@ -58,8 +58,7 @@ fn cmd_parse(input: &str) -> ! {
 }
 
 fn cmd_eval(input: &str) -> ! {
-    let completer = AutoCompleter::new();
-    let mut session = Session::new(&completer);
+    let mut session = Session::new(None);
     if let Err(err) = session.load_stdlib() {
         let msg = format!("{:?}", err.context("failed to load stdlib"));
         println!("{}", msg.red());
