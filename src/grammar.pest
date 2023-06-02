@@ -76,7 +76,10 @@ statement = { ( assignment | expression) ~ " "* ~ (EOI | NEWLINE) ~ WSPACE* }
   // In a real-world languages, you might want to allow such cases
   // (and in general, parse everything you can possibly parse) and let linters
   // and code formatters to take care of strange-looking inputs.
-  expression = { definition | call | identifier | ( "(" ~ (definition | call) ~ ")" ) }
+  expression = {
+    definition | call | identifier |
+    ( "(" ~ WSPACE* ~ (definition | call) ~ WSPACE* ~ ")" )
+ }
 
     // Call a lambda function with an argument.
     // Or "application", as smart people call it.
@@ -115,10 +118,10 @@ statement = { ( assignment | expression) ~ " "* ~ (EOI | NEWLINE) ~ WSPACE* }
     //
     // Perhaps, that's why LISP has so many braces.
     call = {
-        ( identifier | ( "(" ~ (definition | call) ~ ")" ) )
+        ( identifier | ( "(" ~ WSPACE* ~ (definition | call) ~ WSPACE* ~ ")" ) )
         ~ (
             " "+
-            ~ ( identifier | ( "(" ~ (definition | call) ~ ")" ) )
+            ~ ( identifier | ( "(" ~ WSPACE* ~ (definition | call) ~ WSPACE* ~ ")" ) )
         )+
     }
 

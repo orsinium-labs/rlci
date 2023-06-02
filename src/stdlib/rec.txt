@@ -1,3 +1,8 @@
 
-fac = Y (\f \n is_zero n 1 (mul n (f (dec n))))
-fib = Y (\f \n lte n 2 1 (add (f (dec n)) (f (dec (dec n)))))
+fac = Y (
+    \f \n is_zero n 1 (mul n (f (dec n)))
+)
+
+fib = Y (
+    \f \n lte n 2 1 (add (f (dec n)) (f (dec (dec n))))
+)
