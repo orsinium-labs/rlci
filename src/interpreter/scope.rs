@@ -26,7 +26,7 @@ impl GlobalScope {
 
 pub struct LocalScope<'p, 'v> {
     parent: Option<&'p LocalScope<'p, 'v>>,
-    name: String,
+    pub name: String,
     value: &'v Value,
 }
 

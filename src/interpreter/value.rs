@@ -111,10 +111,22 @@ impl Value {
     fn bind_local(&self, local: &LocalScope) -> Value {
         use Value::*;
         match self {
-            Def { arg, value } => Def {
-                arg: arg.to_string(),
-                value: value.bind_local(local).into(),
-            },
+            Def { arg, value } => {
+                // Do not bind the local variable to functions that will shadow it anyway.
+                // This is not just a performance improvement. If we bind a variable
+                // that is meant to be rebind later, we may get a wrong repr.
+                // For example: `(λa λa a) id`.
+                // The repr for the evaluation result of this expression should be `λa a`
+                // but without the check below it will be `λa id` which is wrong.
+                if arg == &local.name {
+                    self.clone()
+                } else {
+                    Def {
+                        arg: arg.to_string(),
+                        value: value.bind_local(local).into(),
+                    }
+                }
+            }
             Id { name } | LocalId { name, value: _ } | GlobalId { name, value: _ } => {
                 match local.get(name) {
                     Some(val) => LocalId {

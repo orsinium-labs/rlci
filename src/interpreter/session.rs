@@ -78,6 +78,7 @@ mod tests {
     #[case(r#"(\a \a a) A B"#, "λb b")]
     #[case(r#"(\a (\a a) (\x a)) A"#, "λx A")]
     #[case(r#"(\a (\a a) (\x a)) A B"#, "λa a")]
+    #[case(r#"(\a \a a) A"#, "λa a")]
     fn eval_module(#[case] input: &str, #[case] exp: &str) {
         let hinter = AutoCompleter::new();
         let mut session = Session::new(&hinter);
