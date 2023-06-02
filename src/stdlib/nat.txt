@@ -20,7 +20,7 @@ diff = \a \b add (sub a b) (sub b a)
 9 = inc 8
 10 = inc 9
 
-is_zero = \a a (\_ \a \b b) (\a \b a)
+is_zero = \n n (\_ \a \b b) (\a \b a)
 gte = \a \b is_zero (sub b a)
 lte = \a \b is_zero (sub a b)
 gt = \a \b is_zero (sub (inc b) a)

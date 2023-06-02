@@ -27,7 +27,7 @@ mod tests {
 
     #[rstest]
     #[case::id(r#"id"#, "λa a")]
-    // test bool
+    // bool
     #[case::true_repr(r#"true"#, T)]
     #[case::false_repr(r#"false"#, F)]
     #[case::not(r#"not true"#, F)]
@@ -48,6 +48,40 @@ mod tests {
     #[case::xnor(r#"xnor false true"#, F)]
     #[case::xnor(r#"xnor true false"#, F)]
     #[case::xnor(r#"xnor true true"#, T)]
+    // nat operations
+    #[case::inc(r#"eq (inc 0) 1"#, T)]
+    #[case::inc(r#"eq (inc 2) 3"#, T)]
+    #[case::add(r#"eq (add 2 3) 5"#, T)]
+    #[case::mul(r#"eq (mul 2 3) 6"#, T)]
+    #[case::pow(r#"eq (pow 3 2) 9"#, T)]
+    #[case::dec(r#"eq (dec 3) 2"#, T)]
+    #[case::dec(r#"eq (dec 0) 0"#, T)]
+    #[case::sub(r#"eq (sub 5 3) 2"#, T)]
+    #[case::sub(r#"eq (sub 3 5) 0"#, T)]
+    #[case::diff(r#"eq (diff 5 3) 2"#, T)]
+    #[case::diff(r#"eq (diff 3 5) 2"#, T)]
+    #[case::min(r#"eq (min 3 5) 3"#, T)]
+    #[case::min(r#"eq (min 5 3) 3"#, T)]
+    #[case::max(r#"eq (max 3 5) 5"#, T)]
+    #[case::max(r#"eq (max 5 3) 5"#, T)]
+    // nat comparison
+    #[case::is_zero(r#"is_zero 0"#, T)]
+    #[case::is_zero(r#"is_zero 1"#, F)]
+    #[case::eq(r#"eq 2 2"#, T)]
+    #[case::eq(r#"eq 2 3"#, F)]
+    #[case::eq(r#"eq 3 2"#, F)]
+    #[case::lt(r#"lt 2 5"#, T)]
+    #[case::lt(r#"lt 5 2"#, F)]
+    #[case::lt(r#"lt 2 2"#, F)]
+    #[case::gt(r#"gt 2 5"#, F)]
+    #[case::gt(r#"gt 5 2"#, T)]
+    #[case::gt(r#"gt 2 2"#, F)]
+    #[case::lte(r#"lte 2 5"#, T)]
+    #[case::lte(r#"lte 5 2"#, F)]
+    #[case::lte(r#"lte 2 2"#, T)]
+    #[case::gte(r#"gte 2 5"#, F)]
+    #[case::gte(r#"gte 5 2"#, T)]
+    #[case::gte(r#"gte 2 2"#, T)]
     fn stdlib(#[case] input: &str, #[case] exp: &str) {
         let hinter = AutoCompleter::new();
         let mut session = Session::new(&hinter);

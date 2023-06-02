@@ -80,7 +80,11 @@ impl Value {
             GlobalId { name, value } | LocalId { name, value } => {
                 value.eval().context(format!("failure executing {name}"))?
             }
-            Call { target, arg } => target.call(arg).context("failure calling a function")?,
+            Call { target, arg } => {
+                // This is the star of the show. The main point of the evaluation
+                // is to call all functions.
+                target.call(arg).context("failure calling a function")?
+            }
         })
     }
 

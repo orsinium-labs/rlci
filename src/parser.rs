@@ -70,6 +70,10 @@ fn parse_statement(root: Pair<Rule>) -> Option<Stmt> {
         }
 
         Rule::expression => {
+            // `parse_expression` knows how to parse the `expression` rule,
+            // so you could just use `parse_expression(root)` instead,
+            // and it would work just fine. Unwrapping it here is an optimization
+            // to have one fewer recursive function call.
             let subpair = root.into_inner().next().unwrap();
             let expr = parse_expression(subpair);
             Some(Stmt::Expr { expr })
