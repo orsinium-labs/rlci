@@ -1,4 +1,4 @@
-use super::{GlobalScope, LocalScope};
+use super::GlobalScope;
 use crate::ast_nodes::Expr;
 use anyhow::Context;
 
@@ -95,8 +95,7 @@ impl Value {
                 arg: arg_name,
                 value: expr,
             } => {
-                let local = LocalScope::new(arg_name.to_string(), arg_value);
-                let expr = expr.bind_local(&local);
+                let expr = expr.bind_local(arg_name, arg_value);
                 expr.eval()
             }
             Id { name } => anyhow::bail!("unbound variable `{name}`"),
@@ -108,7 +107,7 @@ impl Value {
         }
     }
 
-    fn bind_local(&self, local: &LocalScope) -> Value {
+    fn bind_local(&self, lname: &str, lvalue: &Value) -> Value {
         use Value::*;
         match self {
             Def { arg, value } => {
@@ -118,28 +117,33 @@ impl Value {
                 // For example: `(λa λa a) id`.
                 // The repr for the evaluation result of this expression should be `λa a`
                 // but without the check below it will be `λa id` which is wrong.
-                if arg == &local.name {
+                if arg == lname {
                     self.clone()
                 } else {
                     Def {
                         arg: arg.to_string(),
-                        value: value.bind_local(local).into(),
+                        value: value.bind_local(lname, lvalue).into(),
                     }
                 }
             }
             Id { name } | LocalId { name, value: _ } | GlobalId { name, value: _ } => {
-                match local.get(name) {
-                    Some(val) => LocalId {
+                if name == lname {
+                    LocalId {
                         name: name.to_string(),
-                        value: val.clone().into(),
-                    },
-                    None => self.clone(),
+                        value: lvalue.clone().into(),
+                    }
+                } else {
+                    self.clone()
                 }
             }
-            Call { target, arg } => Call {
-                target: target.bind_local(local).into(),
-                arg: arg.bind_local(local).into(),
-            },
+            Call { target, arg } => {
+                let target = target.bind_local(lname, lvalue);
+                let arg = arg.bind_local(lname, lvalue);
+                Call {
+                    target: target.into(),
+                    arg: arg.into(),
+                }
+            }
         }
     }
 }

@@ -18,7 +18,7 @@ pub mod interpreter {
 
     pub(crate) use helper::Helper;
     pub use repl::run_repl;
-    pub(crate) use scope::{GlobalScope, LocalScope};
+    pub(crate) use scope::GlobalScope;
     pub use session::Session;
     pub(crate) use stdlib::read_stdlib;
     pub(crate) use value::Value;

@@ -23,37 +23,3 @@ impl GlobalScope {
         self.get(name).unwrap()
     }
 }
-
-pub struct LocalScope<'p, 'v> {
-    parent: Option<&'p LocalScope<'p, 'v>>,
-    pub name: String,
-    value: &'v Value,
-}
-
-impl<'p, 'v> LocalScope<'p, 'v> {
-    pub fn new(name: String, value: &'v Value) -> Self {
-        Self {
-            parent: None,
-            name,
-            value,
-        }
-    }
-
-    pub fn get(&self, name: &str) -> Option<&'v Value> {
-        if self.name == name {
-            return Some(self.value);
-        }
-        match self.parent {
-            Some(parent) => parent.get(name),
-            None => None,
-        }
-    }
-
-    pub fn set(&'p self, name: &str, val: &'v Value) -> LocalScope {
-        LocalScope {
-            parent: Some(self),
-            name: name.to_string(),
-            value: val,
-        }
-    }
-}
