@@ -1,8 +1,9 @@
-use std::cell::RefCell;
-use std::collections::HashSet;
-
+use colored::Colorize;
 use rustyline::hint::Hint;
 use rustyline::Context;
+use std::borrow::Cow;
+use std::cell::RefCell;
+use std::collections::HashSet;
 
 pub struct AutoCompleter {
     hints: RefCell<HashSet<CommandHint>>,
@@ -22,8 +23,36 @@ impl AutoCompleter {
 }
 
 impl rustyline::validate::Validator for AutoCompleter {}
-impl rustyline::highlight::Highlighter for AutoCompleter {}
 impl rustyline::Helper for AutoCompleter {}
+
+impl rustyline::highlight::Highlighter for AutoCompleter {
+    fn highlight<'l>(&self, line: &'l str, pos: usize) -> Cow<'l, str> {
+        let _ = pos;
+
+        // create colored versions of the known tokens
+        let lambda = "λ".blue().to_string();
+        let equal = "=".blue().to_string();
+        let left_br = "(".magenta().to_string();
+        let right_br = ")".magenta().to_string();
+        let hash = "#".cyan().to_string();
+
+        // replace known tokens with colored versions
+        let line = line.clear();
+        let line = line.replace('λ', &lambda);
+        let line = line.replace('\\', &lambda);
+        let line = line.replace('=', &equal);
+        let line = line.replace('(', &left_br);
+        let line = line.replace(')', &right_br);
+        let line = line.replace('#', &hash);
+
+        Cow::Owned(line)
+    }
+
+    fn highlight_char(&self, line: &str, pos: usize) -> bool {
+        let _ = (line, pos);
+        true
+    }
+}
 
 impl rustyline::completion::Completer for AutoCompleter {
     type Candidate = CommandHint;

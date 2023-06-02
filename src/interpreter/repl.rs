@@ -21,6 +21,9 @@ pub fn run_repl() {
         let readline = rl.readline(">>> ");
         match readline {
             Ok(input) => {
+                if input.starts_with('#') {
+                    continue;
+                }
                 rl.add_history_entry(&input).unwrap();
                 let res = match parse(&input) {
                     Ok(module) => match session.eval_module(&module) {
