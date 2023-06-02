@@ -43,7 +43,14 @@ module = { SOI ~ WSPACE* ~ statement+ ~ EOI }
 // them however you like. Spaces before the n+1'th statement are consumed by
 // the `WSPACE*` at the end of the n'th statement, and spaces before the first statement
 // are consumed by `WSPACE*` of the `module`.
-statement = { ( assignment | expression) ~ " "* ~ (EOI | NEWLINE) ~ WSPACE* }
+//
+// We also allow comments before a statement.
+// Making `comment` a statement of its own will allow comments-only files and break
+// our assumption that every statement can be evaluated into a specific value.
+// Allowing comments to appear anywhere is probably a good idea
+// and that's what all other languages do, but that won't make much difference
+// in our case because the support for newlines in expressions is very limited.
+statement = { COMMENT* ~ ( assignment | expression) ~ " "* ~ (EOI | NEWLINE) ~ WSPACE* }
 
   // Assignment binds an expression to a name in the global scope.
   // The classic lambda calculus doesn't have it but that's an important convenience
@@ -131,7 +138,7 @@ statement = { ( assignment | expression) ~ " "* ~ (EOI | NEWLINE) ~ WSPACE* }
     // `λa a` or `\a a`. I don't see the point in keeping the dot here.
     // Even more, using dot woul make it look like `λa.a b` means `(λa.a) b`
     // while in fact it is `λa.(a b)`. Using space instead makes it more clear.
-    definition = { ("\\" | "λ") ~ identifier ~ " "+ ~ expression }
+    definition = { ("\\" | "λ") ~ identifier ~ WSPACE+ ~ expression }
 
     // The identifier (variable) is a name of a lambda function argument
     // or a global binding.
@@ -184,3 +191,6 @@ PUNCT = _{
     // https://pest.rs/book/grammars/syntax.html#terminals
     '\u{2200}'..'\u{22FF}'
 }
+// A comment can be any string starting with `#` and ending with a newline.
+// The `!"\n" ~ ANY` art says "any symbol except newline".
+COMMENT = _{ "#" ~ ( !"\n" ~ ANY )* ~ "\n"+ }
