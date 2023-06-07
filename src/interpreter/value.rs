@@ -4,14 +4,31 @@ use anyhow::Context;
 
 #[derive(Debug, Clone)]
 pub enum Value {
-    Def { arg: String, value: Box<Value> },
-    Id { name: String },
-    GlobalId { name: String, value: Box<Value> },
-    LocalId { name: String, value: Box<Value> },
-    Call { target: Box<Value>, arg: Box<Value> },
+    Def {
+        arg: String,
+        value: Box<Value>,
+    },
+    Id {
+        name: String,
+    },
+    BoundId {
+        name: String,
+        value: Box<Value>,
+        global: bool,
+    },
+    Call {
+        target: Box<Value>,
+        arg: Box<Value>,
+    },
 }
 
 impl Value {
+    /// Convert an AST node into a Value.
+    ///
+    /// `Expr` and `Value` are very similar but not the same.
+    /// Their semantic is slightly different and then `Value` may contain
+    /// runtime-only infromation. In our case, IDs can be bound,
+    /// so `Value` additionally has `BoundId`.
     pub fn from_expr(expr: &Expr) -> Self {
         match expr {
             Expr::Def { arg, expr } => Value::Def {
@@ -28,15 +45,33 @@ impl Value {
         }
     }
 
+    /// Represent the value as a valid human-readable expression.
+    ///
+    /// The name and the idea comes from Python's `__repr__` magic method.
+    /// The main idea is that you can copy-paste the result of this function into REPL
+    /// and (assuming all globals are the same) get the same evaluation result.
+    ///
+    /// The function is primarily used by the REPL to nicely format execution result.
     pub fn repr(&self) -> String {
+        // This is a convenient way to more briefly referrer to the items
+        // of the current enum. So, instead of `Value::Def` we can write just `Def`.
+        use Value::*;
         match self {
-            Value::Def { arg, value } => {
+            Def { arg, value } => {
                 format!("λ{arg} {}", value.repr())
             }
-            Value::Id { name } => name.to_string(),
-            Value::GlobalId { name, value: _ } => name.to_string(),
-            Value::LocalId { name: _, value } => value.repr(),
-            Value::Call { target, arg } => {
+            Id { name } => name.to_string(),
+            // Global IDs are better to be referred in repr by their name.
+            BoundId {
+                name, global: true, ..
+            } => name.to_string(),
+            // Local bound IDs should be represented by their values.
+            // If you repr them by name, the result of `(λa λb a) true` will be
+            // represented as `λb a` and it won't be clear what is `a` in this case.
+            // However, if you repr them by value, the repr of the result
+            // will be `λb true`.
+            BoundId { value, .. } => value.repr(),
+            Call { target, arg } => {
                 let mut tr = target.repr();
                 let mut ar = arg.repr();
                 if tr.contains('λ') {
@@ -58,13 +93,14 @@ impl Value {
                 value: value.bind_global(global).into(),
             },
             Id { name } => match global.get(name) {
-                Some(val) => GlobalId {
+                Some(val) => BoundId {
                     name: name.to_string(),
                     value: val.clone().into(),
+                    global: true,
                 },
                 None => self.clone(),
             },
-            GlobalId { name: _, value: _ } | LocalId { name: _, value: _ } => self.clone(),
+            BoundId { .. } => self.clone(),
             Call { target, arg } => Call {
                 target: target.bind_global(global).into(),
                 arg: arg.bind_global(global).into(),
@@ -77,7 +113,7 @@ impl Value {
         Ok(match self {
             Def { arg: _, value: _ } => self.clone(),
             Id { name } => anyhow::bail!("unbound variable `{name}`"),
-            GlobalId { name, value } | LocalId { name, value } => {
+            BoundId { name, value, .. } => {
                 value.eval().context(format!("failure executing {name}"))?
             }
             Call { target, arg } => {
@@ -99,7 +135,7 @@ impl Value {
                 expr.eval()
             }
             Id { name } => anyhow::bail!("unbound variable `{name}`"),
-            LocalId { name: _, value } | GlobalId { name: _, value } => value.call(arg_value),
+            BoundId { value, .. } => value.call(arg_value),
             Call { target, arg } => {
                 let value = target.call(arg)?;
                 value.call(arg_value)
@@ -126,11 +162,12 @@ impl Value {
                     }
                 }
             }
-            Id { name } | LocalId { name, value: _ } | GlobalId { name, value: _ } => {
+            Id { name } | BoundId { name, .. } => {
                 if name == lname {
-                    LocalId {
+                    BoundId {
                         name: name.to_string(),
                         value: lvalue.clone().into(),
+                        global: false,
                     }
                 } else {
                     self.clone()
