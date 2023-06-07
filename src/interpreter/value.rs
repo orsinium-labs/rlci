@@ -85,6 +85,25 @@ impl Value {
         }
     }
 
+    /// Bind all unbound variables in the Value to the global names.
+    ///
+    /// We call it as soon as a new function or expression is defined.
+    /// We could postpone doing it until the expression is evaluated,
+    /// but then if the user has redefined the name, it will redefine it
+    /// for all existing expressions.
+    ///
+    /// This is especially important for modules. For example, stdlib defines
+    /// `true` and then `and` that uses `true`. If the user redefines the `true`
+    /// name, it will change the behavior of `and`. That's bad.
+    ///
+    /// Python keeps a separate scope for all modules and binds all definitions
+    /// to the scope in which they are defined. This is better in some cases
+    /// but might get pretty messy.
+    ///
+    /// The disadvantage of binding global names as soon as they are defined
+    /// is that you cannot use the names that aren't defined yet. In particular,
+    /// it makes recursion impossible without using Y-combinator.
+    /// Maybe, this is for better. Otherwise, `a = a` would explode.
     pub fn bind_global(&self, global: &GlobalScope) -> Value {
         use Value::*;
         match self {
@@ -98,6 +117,21 @@ impl Value {
                     value: val.clone().into(),
                     global: true,
                 },
+                // You'll see me doing `clone` a lot in this module.
+                // Perhaps, I could avoid it with some smart pointer
+                // (most likely, `Rc` or `Cow`) but there are a few
+                // reasons not to do it:
+                //
+                // 1. Smart pointers are hard and I'm not good at it.
+                // 2. Premature optimization is the root of all evil.
+                //    If you want to optimize this code, I encourage
+                //    you to write benchmarks first.
+                // 3. Mutability is hard an error-prone. If we try
+                //    sharing a global Def then accidentally bind
+                //    to it some local variable, it might lead to
+                //    nasty bugs.
+                //
+                // So, for a PoC (and RLCI is PoC), keep it simple.
                 None => self.clone(),
             },
             BoundId { .. } => self.clone(),
@@ -162,6 +196,10 @@ impl Value {
                     }
                 }
             }
+            // Bind the local value to the Id (bound or unbound) if the name matches.
+            //
+            // We allow rebinding already bound IDs. It allows for shadowing
+            // global names with local ones.
             Id { name } | BoundId { name, .. } => {
                 if name == lname {
                     BoundId {
@@ -192,6 +230,14 @@ mod tests {
     use crate::parse;
     use rstest::rstest;
 
+    // Test that parsing and `repr`ing an expression gives an expected result.
+    //
+    // Some people believe that unit-tests must be religiously isolated,
+    // so you cannot `parse` here but instead have to manually write and pass AST
+    // nodes, to ensure that if something breaks in the parser, it won't affect
+    // runtime tests.
+    //
+    // I believe that the tests must be simple.
     #[rstest]
     #[case::id(r#"id"#, "id")]
     #[case::id(r#"\x x"#, "λx x")]
