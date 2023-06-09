@@ -4,11 +4,11 @@ use rustyline::Context;
 use std::borrow::Cow;
 use std::cell::RefCell;
 
-// Helper is a struct that provides autocomplete and syntax highlighting for rustyline.
-//
-// The name "Helper" is bad and meaningless but that's how rostyline calls it.
-// I have no idea why the mix together into one class all the logic of autocomplete,
-// syntax highlighting, validation, and everything else.
+/// Helper is a struct that provides autocomplete and syntax highlighting for rustyline.
+///
+/// The name "Helper" is bad and meaningless but that's how rostyline calls it.
+/// I have no idea why the mix together into one class all the logic of autocomplete,
+/// syntax highlighting, validation, and everything else.
 pub struct Helper {
     hints: RefCell<Vec<CommandHint>>,
 }

@@ -2,20 +2,32 @@ use super::GlobalScope;
 use crate::ast_nodes::Expr;
 use anyhow::Context;
 
+/// Different types of runtime values.
+///
+/// Runtime values map quite closely to AST ("homoiconicity"),
+/// and `from_expr` and `repr` methods connect AST and Value together.
+///
+/// In a bigger language, perhaps it's a good idea to use traits and let each
+/// type to be defined separately. However, for small languages (up to JSON)
+/// enums work quite well.
 #[derive(Debug, Clone)]
 pub enum Value {
+    /// A lambda function definition
     Def {
         arg: String,
         value: Box<Value>,
     },
+    /// An unbound identifier.
     Id {
         name: String,
     },
+    /// An identifier bound to a global or local Value.
     BoundId {
         name: String,
         value: Box<Value>,
         global: bool,
     },
+    // A function application.
     Call {
         target: Box<Value>,
         arg: Box<Value>,
@@ -33,6 +45,8 @@ impl Value {
         match expr {
             Expr::Def { arg, expr } => Value::Def {
                 arg: arg.to_string(),
+                // The `into` method is a convenient way to convert `Value`
+                // into `Box<Value>`.
                 value: Value::from_expr(expr).into(),
             },
             Expr::Call { target, arg } => Value::Call {
@@ -74,6 +88,11 @@ impl Value {
             Call { target, arg } => {
                 let mut tr = target.repr();
                 let mut ar = arg.repr();
+                // Only `Def` and `Call` may contain spaces.
+                // `Def` needs to be wrapped into braces because
+                // `(λa a) b` and `λa a b` are different expressions.
+                // `Call` does not need to be wrapped when on the left
+                // because `(a b) c` and `a b c` is the same.
                 if tr.contains('λ') {
                     tr = format!("({tr})");
                 }
@@ -142,12 +161,29 @@ impl Value {
         }
     }
 
+    /// Evaluate the value.
+    ///
+    /// "Evaluation" is not quite correct word for it, but I wanted to keep
+    /// the naming close to the mainstream programming languages.
+    /// In lambda calculus, there are no primitive values, only expresssions,
+    /// and the expressions can only be converted to other equivalent expressions.
+    /// So, there is nothing to evaluate, you can only simplify expressions.
+    /// In particular, you can replace a function application with the function
+    /// with the argument name replaced by argument value. For example,
+    /// `(λa λb a) true` can be simplified into `λb true`.
+    /// In lambda calculus, this process is called "β-reduction".
+    /// This is exactly what this method does.
+    ///
+    /// https://en.wikipedia.org/wiki/Lambda_calculus#Reduction
     pub fn eval(&self) -> anyhow::Result<Value> {
         use Value::*;
         Ok(match self {
             Def { arg: _, value: _ } => self.clone(),
             Id { name } => anyhow::bail!("unbound variable `{name}`"),
             BoundId { name, value, .. } => {
+                // Adding context to every failure is very important
+                // during the evaluation. This is how we build a traceback
+                // that get shown to the user in case of an undefined variable.
                 value.eval().context(format!("failure executing {name}"))?
             }
             Call { target, arg } => {
@@ -158,6 +194,11 @@ impl Value {
         })
     }
 
+    /// Call the value with the given argument value.
+    ///
+    /// Since in lambda calculus everything is a function,
+    /// everything can be called and it never fails.
+    /// The only way this method can fail is if a variable used is undefined.
     pub fn call(&self, arg_value: &Value) -> anyhow::Result<Value> {
         use Value::*;
         match self {
@@ -177,6 +218,10 @@ impl Value {
         }
     }
 
+    /// Recursively bind the given name to the given value.
+    ///
+    /// It's called "bind_local" because it is called for function application
+    /// during evaluation (β-reduction).
     fn bind_local(&self, lname: &str, lvalue: &Value) -> Value {
         use Value::*;
         match self {

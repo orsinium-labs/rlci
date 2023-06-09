@@ -3,11 +3,14 @@ use pest::error::Error;
 use pest::iterators::Pair;
 use pest::Parser;
 
+/// The parser, knows how to parse th language syntax using the grammar file.
+
 // This `derive` is the macro magic that generates the parser from the gramar file.
 #[derive(Parser)]
 #[grammar = "grammar.pest"]
 pub struct LangParser;
 
+/// Convert a plain text input into AST nodes.
 #[allow(clippy::result_large_err)]
 pub fn parse(input: &str) -> Result<Module, Error<Rule>> {
     // The `Rule` enum is generated from the grammar by the `derive(Parser)` above.

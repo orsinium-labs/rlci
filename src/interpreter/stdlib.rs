@@ -3,8 +3,12 @@ use crate::parse;
 use anyhow::Context;
 use include_dir::{include_dir, Dir};
 
+// This magic macro makes sure that stdlib files are statically included
+// into binaries. That allows users to simply download and use a single binary
+// instead of installing it in a special way.
 static STDLIB_DIR: Dir = include_dir!("./src/stdlib");
 
+/// Read and parse all stdlib modules.
 pub fn read_stdlib() -> anyhow::Result<Vec<Module>> {
     let mut modules: Vec<Module> = Vec::new();
     for file in STDLIB_DIR.files() {

@@ -3,12 +3,21 @@ use anyhow::Context;
 use crate::ast_nodes::{Expr, Module, Stmt};
 use crate::interpreter::*;
 
+/// Session is a runtime of a program.
+///
+/// The Session loads stdlib, holds the global state, and is responsible
+/// for evaluating modules and statements.
 pub struct Session<'a> {
     global: GlobalScope,
     helper: Option<&'a Helper>,
 }
 
 impl<'a> Session<'a> {
+    /// Create a new Session instance.
+    ///
+    /// Session may optionally accept a pointer to a helper.
+    /// If available, it will update the helpers with the list of
+    /// new global names defined.
     pub fn new(helper: Option<&'a Helper>) -> Self {
         Self {
             global: GlobalScope::new(),
@@ -16,6 +25,12 @@ impl<'a> Session<'a> {
         }
     }
 
+    /// Read stdlib and evaluate it in the current session context.
+    ///
+    /// Since there is no "import" statement, users cannot explicitly
+    /// import anything from the stdlib, so we implicitly import it
+    /// at the shell startup. It's called "prelude" in Haskell and Rust
+    /// and "builtins" in Python.
     pub fn load_stdlib(&mut self) -> anyhow::Result<()> {
         for module in read_stdlib()? {
             self.eval_module(&module).context("failed to eval module")?;
@@ -23,6 +38,7 @@ impl<'a> Session<'a> {
         Ok(())
     }
 
+    /// Evaluate all statements in the module and return the result of the last one.
     pub fn eval_module(&mut self, module: &Module) -> anyhow::Result<&Value> {
         for stmt in &module.stmts[..(module.stmts.len() - 1)] {
             self.eval_stmt(stmt)?;
@@ -31,6 +47,10 @@ impl<'a> Session<'a> {
         self.eval_stmt(stmt)
     }
 
+    /// Evaluate the statement and return its result.
+    ///
+    /// In the current implementation, any statement can be evaluated
+    /// into a specific value. The only failure possible is when a name is undefined.
     fn eval_stmt(&mut self, stmt: &Stmt) -> anyhow::Result<&Value> {
         match stmt {
             // Assignment: store the value in the global scope.
@@ -43,6 +63,14 @@ impl<'a> Session<'a> {
                 Ok(self.global.set(target, val))
             }
             // Variable name: show its value.
+            //
+            // The `repr` shows global bound variables by their name,
+            // which is great for more concise representation of complex
+            // expressions but quite useless for when the whole expression
+            // is just the name.
+            // Without this branch, when the user types `true`, they would simply get
+            // `true` back. This branch unwraps the explicit name to the actual
+            // representation of its value.
             Stmt::Expr {
                 expr: Expr::Id { name },
             } => match self.global.get(name) {
@@ -66,6 +94,8 @@ mod tests {
     use crate::parse;
     use rstest::rstest;
 
+    // These are the most important tests of the runtime.
+    // Perhaps, there should be more of these.
     #[rstest]
     #[case::id(r#"id"#, "λx x")]
     #[case::assign(r#"c = \a a a"#, "λa a a")]
