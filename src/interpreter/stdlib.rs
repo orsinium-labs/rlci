@@ -22,7 +22,7 @@ pub fn read_stdlib() -> anyhow::Result<Vec<Module>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::interpreter::*;
+    use crate::interpreter::Session;
     use crate::parse;
     use rstest::rstest;
 

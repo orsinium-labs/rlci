@@ -1,0 +1,60 @@
+# https://taskfile.dev
+version: "3"
+
+vars:
+  CARGO_BIN: ~/.cargo/bin/
+
+tasks:
+  install-nextest:
+    status:
+      - test -f {{.CARGO_BIN}}/cargo-nextest
+    cmds:
+      - curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C {{.CARGO_BIN}}
+
+  check:
+    cmds:
+      - cargo check --all {{.CLI_ARGS}}
+
+  format:
+    cmds:
+      - cargo fmt --all {{.CLI_ARGS}}
+
+  lint:
+    cmds:
+      - >
+        cargo clippy
+        --examples --tests --benches --bins --lib --workspace
+        -- -D clippy::pedantic -D clippy::dbg-macro -D warnings
+
+  nextest:
+    deps:
+      - install-nextest
+    env:
+      CLICOLOR_FORCE: "yes"
+    cmds:
+      - cargo nextest run --no-fail-fast {{.CLI_ARGS}}
+
+  release:
+    desc: "build and upload a new release"
+    cmds:
+      - which gh
+      - test {{.CLI_ARGS}}
+      - cat Cargo.toml | grep -F 'version = "{{.CLI_ARGS}}"'
+      - cargo publish
+      - git tag {{.CLI_ARGS}}
+      - git push
+      - git push --tags
+      - gh release create --generate-notes {{.CLI_ARGS}}
+
+  test:
+    desc: "run all tests"
+    cmds:
+      - task: nextest
+
+  all:
+    desc: "run all code formatters, linters, and tests"
+    cmds:
+      - task: format
+      - task: check
+      - task: lint
+      - task: test

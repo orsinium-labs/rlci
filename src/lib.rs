@@ -1,5 +1,12 @@
 #![doc = include_str!("../README.md")]
-#![allow(clippy::new_without_default)]
+#![warn(clippy::all, clippy::pedantic)]
+#![allow(
+    clippy::new_without_default,
+    clippy::missing_panics_doc,
+    clippy::missing_errors_doc,
+    clippy::enum_glob_use,
+    clippy::module_name_repetitions
+)]
 #![deny(missing_docs)]
 
 // Makes it possible to use pest parser, must be defined at the crate level.

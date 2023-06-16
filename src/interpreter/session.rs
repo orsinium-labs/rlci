@@ -1,7 +1,7 @@
 use anyhow::Context;
 
 use crate::ast_nodes::{Expr, Module, Stmt};
-use crate::interpreter::*;
+use crate::interpreter::{read_stdlib, GlobalScope, Helper, Value};
 
 /// Session is a runtime of a program.
 ///
@@ -18,6 +18,7 @@ impl<'a> Session<'a> {
     /// Session may optionally accept a pointer to a helper.
     /// If available, it will update the helpers with the list of
     /// new global names defined.
+    #[must_use]
     pub fn new(helper: Option<&'a Helper>) -> Self {
         Self {
             global: GlobalScope::new(),

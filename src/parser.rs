@@ -1,4 +1,4 @@
-use crate::ast_nodes::*;
+use crate::ast_nodes::{Expr, Module, Stmt};
 use pest::error::Error;
 use pest::iterators::Pair;
 use pest::Parser;
@@ -43,7 +43,7 @@ fn parse_module(root: Pair<Rule>) -> Module {
     // extracted by `statement+` part of the `module` rule.
     for subpair in root.into_inner() {
         if let Some(stmt) = parse_statement(subpair) {
-            stmts.push(stmt)
+            stmts.push(stmt);
         }
     }
     Module { stmts }

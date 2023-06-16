@@ -41,9 +41,7 @@ impl rustyline::Helper for Helper {}
 
 // Provides a very basic syntax highlighting for all user input in the REPL.
 impl rustyline::highlight::Highlighter for Helper {
-    fn highlight<'l>(&self, line: &'l str, pos: usize) -> Cow<'l, str> {
-        let _ = pos;
-
+    fn highlight<'l>(&self, line: &'l str, _pos: usize) -> Cow<'l, str> {
         // Create colored versions of the known tokens.
         let lambda = "λ".blue().to_string();
         let equal = "=".blue().to_string();
@@ -72,8 +70,7 @@ impl rustyline::highlight::Highlighter for Helper {
 
     // We make this method to always return true,
     // so that syntax highlighting kicks in every time the user presses a button.
-    fn highlight_char(&self, line: &str, pos: usize) -> bool {
-        let _ = (line, pos);
+    fn highlight_char(&self, _line: &str, _pos: usize) -> bool {
         true
     }
 }
@@ -98,7 +95,7 @@ impl rustyline::completion::Completer for Helper {
         let (_, word) = line.rsplit_once(' ').unwrap_or(("", line));
         for hint in self.hints.borrow().iter() {
             if hint.display().starts_with(word) {
-                res.push(hint.suffix(word.len()))
+                res.push(hint.suffix(word.len()));
             }
         }
         Ok((pos, res))

@@ -1,3 +1,5 @@
+#![warn(clippy::all, clippy::pedantic)]
+
 use clap::{Parser, Subcommand};
 use colored::Colorize;
 use rlci::interpreter::run_repl;
@@ -50,10 +52,10 @@ fn read_stdin() -> String {
 
 fn cmd_parse(input: &str) -> ! {
     let (code, msg) = match parse(input) {
-        Ok(module) => (0, format!("{:#?}", module).green()),
+        Ok(module) => (0, format!("{module:#?}").green()),
         Err(err) => (3, err.to_string().red()),
     };
-    println!("{}", msg);
+    println!("{msg}");
     std::process::exit(code);
 }
 
@@ -67,10 +69,10 @@ fn cmd_eval(input: &str) -> ! {
     let (code, msg) = match parse(input) {
         Ok(module) => match session.eval_module(&module) {
             Ok(result) => (0, result.repr().green()),
-            Err(err) => (2, format!("{:?}", err).red()),
+            Err(err) => (2, format!("{err:?}").red()),
         },
         Err(err) => (3, err.to_string().red()),
     };
-    println!("{}", msg);
+    println!("{msg}");
     std::process::exit(code);
 }

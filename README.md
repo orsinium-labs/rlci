@@ -2,6 +2,14 @@
 
 🦀 Overly-documented Rust-powered Lambda Calculus Interpreter.
 
+## 😎 Features
+
++ **Overly-documented**. There are comments and docstrings for everything, almost every line. Our top priority is to provide you with a good example of building your own programming language.
++ **Simple**. We kept only essentials and ditched anything unneded. Comments? Strings? System calls? Who needs it!
++ **Working**. Everything possible in lambda calculus is also possible with RLCI.
++ **REPL**. We have an interactive input with autocomplete and a bit of syntax highlighting.
++ **Friendly error messages**. And we even got tracebacks!
+
 ## 🧠 Learn Lambda Calculus
 
 ...

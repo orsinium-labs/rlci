@@ -74,11 +74,11 @@ impl Value {
             Def { arg, value } => {
                 format!("λ{arg} {}", value.repr())
             }
-            Id { name } => name.to_string(),
             // Global IDs are better to be referred in repr by their name.
             BoundId {
                 name, global: true, ..
-            } => name.to_string(),
+            }
+            | Id { name } => name.to_string(),
             // Local bound IDs should be represented by their values.
             // If you repr them by name, the result of `(λa λb a) true` will be
             // represented as `λb a` and it won't be clear what is `a` in this case.
@@ -171,10 +171,10 @@ impl Value {
     /// In particular, you can replace a function application with the function
     /// with the argument name replaced by argument value. For example,
     /// `(λa λb a) true` can be simplified into `λb true`.
-    /// In lambda calculus, this process is called "β-reduction".
+    /// In lambda calculus, this process is called "[β-reduction]".
     /// This is exactly what this method does.
     ///
-    /// https://en.wikipedia.org/wiki/Lambda_calculus#Reduction
+    /// [β-reduction]: https://en.wikipedia.org/wiki/Lambda_calculus#Reduction
     pub fn eval(&self) -> anyhow::Result<Value> {
         use Value::*;
         Ok(match self {
@@ -220,7 +220,7 @@ impl Value {
 
     /// Recursively bind the given name to the given value.
     ///
-    /// It's called "bind_local" because it is called for function application
+    /// It's called `bind_local` because it is called for function application
     /// during evaluation (β-reduction).
     fn bind_local(&self, lname: &str, lvalue: &Value) -> Value {
         use Value::*;
@@ -297,7 +297,7 @@ mod tests {
         let stmt = &module.stmts[0];
         match stmt {
             Stmt::Expr { expr } => assert_eq!(Value::from_expr(expr).repr(), exp),
-            _ => panic!("bad statement"),
+            Stmt::Assign { .. } => panic!("bad statement"),
         }
     }
 }

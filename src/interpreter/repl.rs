@@ -37,11 +37,11 @@ pub fn run_repl() {
                 let res = match parse(&input) {
                     Ok(module) => match session.eval_module(&module) {
                         Ok(result) => result.repr().green(),
-                        Err(err) => format!("{:?}", err).red(),
+                        Err(err) => format!("{err:?}").red(),
                     },
                     Err(err) => err.to_string().red(),
                 };
-                println!("{}", res);
+                println!("{res}");
             }
             Err(ReadlineError::Interrupted) => {
                 println!("{}", "CTRL-C".yellow());
