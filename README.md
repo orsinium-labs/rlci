@@ -8,6 +8,7 @@
 + 🐦 **Simple**. We kept only essentials and ditched anything unneded. Comments? Strings? System calls? Who needs it!
 + ⚙️ **Working**. Everything possible in lambda calculus is also possible with RLCI.
 + 🏃 **REPL**. We have an interactive input with autocomplete and a bit of syntax highlighting.
++ 🧩 **Standard library**. We have lots of useful functions available out-of-the-box.
 + ⚠️ **Friendly error messages**. And we even got tracebacks!
 + 🦀 **Rust**. Rust is a good choice for writing a programming language, thanks to binary distributions and great performance.
 
@@ -25,10 +26,6 @@ I had several attempts to write a programming language before. And each time I e
 
 If you want a [Turing complete](https://en.wikipedia.org/wiki/Turing_completeness) programming language, your best options are either [Turing machine](https://en.wikipedia.org/wiki/Turing_machine) or Lambda calculus. The thing about Turing machine, though, is that it's quite hard to program on it anything meaningful (see [Brainfuck](https://en.wikipedia.org/wiki/Brainfuck)). But Lambda calculus is different. Lambda calculus is a real functional language and has almost everything you have in LISP or Clojure. So, here we are.
 
-## 📝 Syntax
-
-...
-
 ## 📦 Installation
 
 If you have cargo:
@@ -39,9 +36,63 @@ cargo install rlci
 
 If you don't, go into [releases](https://github.com/orsinium/rlci/releases) and grab a binary for your system.
 
+## 📝 Syntax
+
+Everything is a function. Every function accepts exactly one argument (you give it a name) and returns an expression. Here is one that just returns the given argument:
+
+```text
+\x x
+```
+
+Or the one that accepts 2 arguments and returns the first one:
+
+```text
+\a \b a
+```
+
+Technically, it accepts only one argument and returns another function that returns that first argument, but that works about the same as if we had a function accepting 2 arguments. This is known as [currying](https://en.wikipedia.org/wiki/Currying).
+
+You can assign expressions to variables to be referenced later:
+
+```text
+id = \x \x
+true = \a \b a
+```
+
+To call a function, specify the function you want to call and then space-separate arguments:
+
+```text
+id true     # calls `id` with true, returns `true`
+true id id  # cals `true` with `id` and `id`, returns the first `id`
+```
+
+You can use parenthesis to specify the order in which they should de executed:
+
+```text
+(\x x) (not true)  # returns `false`
+```
+
+And that's it. Many functions are available out-of-the-box, such as [boolean operations](src/stdlib/bool.rb), [natural numbers](src/stdlib/nat.rb), [lists](src/stdlib/list.rb), a few [recursive funtions](src/stdlib/rec.rb), and [combinators](src/stdlib/combinators.rb).
+
 ## 🛠️ Usage
 
-...
+Run REPL:
+
+```bash
+rlci repl
+```
+
+Parse a module and print the result of the last expression:
+
+```bash
+cat module.txt | rlci eval
+```
+
+Parse and print the AST of a module:
+
+```bash
+echo 'id = λx x' | rlci parse
+```
 
 ## ⚙️ Dependencies
 
@@ -52,7 +103,7 @@ If you don't, go into [releases](https://github.com/orsinium/rlci/releases) and 
 + [include_dir](https://github.com/Michael-F-Bryan/include_dir) is for including stdlib into the binary.
 + [colored](https://github.com/mackwic/colored) is for colorizing terminal output. Errors should be red!
 
-## Questions and Answers
+## ❓ Questions and Answers
 
 **Q: Should I use it on the production?**
 
@@ -72,7 +123,7 @@ A: Lambda Calculus became feature complete in 1930s. I'll let you know if there 
 
 **Q: Why is it on Rust?**
 
-Because writing things on Python or Go is too easy. Writing on Rust is like solving riddles, and I love riddles.
+Because writing things on Python or Go is too easy. Programming on Rust is like solving riddles, and I love riddles.
 
 **Q: Should I star the project?**
 
