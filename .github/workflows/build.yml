@@ -104,7 +104,7 @@ jobs:
           mkdir -p "${ARCHIVE_DIR}/autocomplete"
 
           # Binary
-          cp "${{ steps.bin.outputs.BIN_PATH }}" "$ARCHIVE_DIR"
+          cp -r "${{ steps.bin.outputs.BIN_PATH }}" "$ARCHIVE_DIR"
 
           # base compressed package
           pushd "${PKG_STAGING}/" >/dev/null
