@@ -13,6 +13,9 @@ env:
   CICD_INTERMEDIATES_DIR: "_cicd-intermediates"
   MSRV_FEATURES: --no-default-features --features minimal-application,bugreport,build-assets
 
+permissions:
+  contents: write
+
 # https://github.com/sharkdp/bat/blob/master/.github/workflows/CICD.yml
 jobs:
   crate_metadata:
