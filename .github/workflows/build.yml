@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+    tags:
+      - "*"
   pull_request:
   workflow_dispatch:
 
@@ -16,7 +18,6 @@ jobs:
   build:
     name: ${{ matrix.job.target }} (${{ matrix.job.os }})
     runs-on: ${{ matrix.job.os }}
-    needs: crate_metadata
     strategy:
       fail-fast: false
       matrix:
