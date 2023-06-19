@@ -13,6 +13,10 @@ concurrency:
   group: ${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+env:
+  CICD_INTERMEDIATES_DIR: "_cicd-intermediates"
+  MSRV_FEATURES: --no-default-features --features minimal-application,bugreport,build-assets
+
 # https://github.com/sharkdp/bat/blob/master/.github/workflows/CICD.yml
 jobs:
   build:
