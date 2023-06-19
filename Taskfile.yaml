@@ -11,6 +11,12 @@ tasks:
     cmds:
       - curl -LsSf https://get.nexte.st/latest/linux | tar zxf - -C {{.CARGO_BIN}}
 
+  install-cross:
+    status:
+      - which cross
+    cmds:
+      - cargo install cross
+
   check:
     cmds:
       - cargo check --all {{.CLI_ARGS}}
@@ -50,6 +56,13 @@ tasks:
     desc: "run all tests"
     cmds:
       - task: nextest
+
+  build-all:
+    deps:
+      - install-cross
+    cmds:
+      - cargo build --all-targets --release
+      # - cross build --target x86_64-pc-windows-gnu
 
   all:
     desc: "run all code formatters, linters, and tests"
