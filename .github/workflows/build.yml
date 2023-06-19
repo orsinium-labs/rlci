@@ -1,0 +1,137 @@
+name: main
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+# https://github.com/sharkdp/bat/blob/master/.github/workflows/CICD.yml
+jobs:
+  build:
+    name: ${{ matrix.job.target }} (${{ matrix.job.os }})
+    runs-on: ${{ matrix.job.os }}
+    needs: crate_metadata
+    strategy:
+      fail-fast: false
+      matrix:
+        job:
+          - { target: aarch64-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true }
+          - { target: arm-unknown-linux-gnueabihf, os: ubuntu-20.04, use-cross: true }
+          - { target: arm-unknown-linux-musleabihf, os: ubuntu-20.04, use-cross: true }
+          - { target: i686-pc-windows-msvc, os: windows-2019 }
+          - { target: i686-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true }
+          - { target: i686-unknown-linux-musl, os: ubuntu-20.04, use-cross: true }
+          - { target: x86_64-apple-darwin, os: macos-12 }
+          - { target: x86_64-pc-windows-gnu, os: windows-2019 }
+          - { target: x86_64-pc-windows-msvc, os: windows-2019 }
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true }
+          - { target: x86_64-unknown-linux-musl, os: ubuntu-20.04, use-cross: true }
+    env:
+      BUILD_CMD: cargo
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.job.target }}
+
+      - name: Install cross
+        if: matrix.job.use-cross
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
+
+      - name: Overwrite build command env variable
+        if: matrix.job.use-cross
+        shell: bash
+        run: echo "BUILD_CMD=cross" >> $GITHUB_ENV
+
+      - name: Show version information
+        shell: bash
+        run: |
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+
+      - name: Build
+        shell: bash
+        run: $BUILD_CMD build --locked --release --target=${{ matrix.job.target }}
+
+      - name: Set binary name & path
+        id: bin
+        shell: bash
+        run: |
+          # Figure out suffix of binary
+          EXE_suffix=""
+          case ${{ matrix.job.target }} in
+            *-pc-windows-*) EXE_suffix=".exe" ;;
+          esac;
+
+          # Setup paths
+          BIN_NAME="${{ needs.crate_metadata.outputs.name }}${EXE_suffix}"
+          BIN_PATH="target/${{ matrix.job.target }}/release/${BIN_NAME}"
+
+          # Let subsequent steps know where to find the binary
+          echo "BIN_PATH=${BIN_PATH}" >> $GITHUB_OUTPUT
+          echo "BIN_NAME=${BIN_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Create tarball
+        id: package
+        shell: bash
+        run: |
+          PKG_suffix=".tar.gz" ; case ${{ matrix.job.target }} in *-pc-windows-*) PKG_suffix=".zip" ;; esac;
+          PKG_BASENAME=${{ needs.crate_metadata.outputs.name }}-v${{ needs.crate_metadata.outputs.version }}-${{ matrix.job.target }}
+          PKG_NAME=${PKG_BASENAME}${PKG_suffix}
+          echo "PKG_NAME=${PKG_NAME}" >> $GITHUB_OUTPUT
+
+          PKG_STAGING="${{ env.CICD_INTERMEDIATES_DIR }}/package"
+          ARCHIVE_DIR="${PKG_STAGING}/${PKG_BASENAME}/"
+          mkdir -p "${ARCHIVE_DIR}"
+          mkdir -p "${ARCHIVE_DIR}/autocomplete"
+
+          # Binary
+          cp "${{ steps.bin.outputs.BIN_PATH }}" "$ARCHIVE_DIR"
+
+          # base compressed package
+          pushd "${PKG_STAGING}/" >/dev/null
+          case ${{ matrix.job.target }} in
+            *-pc-windows-*) 7z -y a "${PKG_NAME}" "${PKG_BASENAME}"/* | tail -2 ;;
+            *) tar czf "${PKG_NAME}" "${PKG_BASENAME}"/* ;;
+          esac;
+          popd >/dev/null
+
+          # Let subsequent steps know where to find the compressed package
+          echo "PKG_PATH=${PKG_STAGING}/${PKG_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Upload tarball
+        uses: actions/upload-artifact@master
+        with:
+          name: ${{ steps.package.outputs.PKG_NAME }}
+          path: ${{ steps.package.outputs.PKG_PATH }}
+
+      - name: Check for release
+        id: is-release
+        shell: bash
+        run: |
+          unset IS_RELEASE
+          if [[ $GITHUB_REF =~ ^refs/tags/v?[0-9].* ]]; then IS_RELEASE='true' ; fi
+          echo "IS_RELEASE=${IS_RELEASE}" >> $GITHUB_OUTPUT
+
+      - name: Publish archives and packages
+        uses: softprops/action-gh-release@v1
+        if: steps.is-release.outputs.IS_RELEASE
+        with:
+          files: |
+            ${{ steps.package.outputs.PKG_PATH }}
+            ${{ steps.debian-package.outputs.DPKG_PATH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
