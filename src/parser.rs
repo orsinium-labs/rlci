@@ -37,15 +37,10 @@ pub fn parse(input: &str) -> Result<Module, Error<Rule>> {
 }
 
 fn parse_module(root: Pair<Rule>) -> Module {
-    let mut stmts: Vec<Stmt> = Vec::new();
     // The Pair.into_inner method returns an iterator over the rules
     // inside of the given rule. In this case, it iterates over statements
     // extracted by `statement+` part of the `module` rule.
-    for subpair in root.into_inner() {
-        if let Some(stmt) = parse_statement(subpair) {
-            stmts.push(stmt);
-        }
-    }
+    let stmts: Vec<Stmt> = root.into_inner().filter_map(parse_statement).collect();
     Module { stmts }
 }
 
