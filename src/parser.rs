@@ -111,16 +111,13 @@ fn parse_expression(root: Pair<Rule>) -> Expr {
             }
         }
         Rule::call => {
-            let mut subpairs = root.into_inner();
-            let p1 = subpairs.next().unwrap();
-            let mut target = parse_expression(p1);
-            for p in subpairs {
-                target = Expr::Call {
+            root.into_inner()
+                .map(parse_expression)
+                .reduce(|target, arg| Expr::Call {
                     target: Box::new(target),
-                    arg: Box::new(parse_expression(p)),
-                }
-            }
-            target
+                    arg: Box::new(arg)
+                })
+                .unwrap()
         }
         Rule::identifier => Expr::Id {
             name: root.as_str().parse().unwrap(),
