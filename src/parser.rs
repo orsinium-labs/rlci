@@ -110,15 +110,14 @@ fn parse_expression(root: Pair<Rule>) -> Expr {
                 expr: Box::new(parse_expression(p2)),
             }
         }
-        Rule::call => {
-            root.into_inner()
-                .map(parse_expression)
-                .reduce(|target, arg| Expr::Call {
-                    target: Box::new(target),
-                    arg: Box::new(arg)
-                })
-                .unwrap()
-        }
+        Rule::call => root
+            .into_inner()
+            .map(parse_expression)
+            .reduce(|target, arg| Expr::Call {
+                target: Box::new(target),
+                arg: Box::new(arg),
+            })
+            .unwrap(),
         Rule::identifier => Expr::Id {
             name: root.as_str().parse().unwrap(),
         },
@@ -132,30 +131,30 @@ mod tests {
     use rstest::rstest;
 
     #[rstest]
-    #[case::id(r#"id"#, "id")]
-    #[case::space(r#"  id"#, "id")]
-    #[case::space(r#"id  "#, "id")]
-    #[case::call(r#"id x"#, "call(id, id)")]
-    #[case::def(r#"\x x"#, "def(id)")]
-    #[case::def(r#"λx x"#, "def(id)")]
-    #[case::assign(r#"id = \x x"#, "let(def(id))")]
-    #[case::assign(r#"id = (\x x)"#, "let(def(id))")]
-    #[case::assign(r#"& = \a a"#, "let(def(id))")]
-    #[case(r#"id= \x x"#, "let(def(id))")]
-    #[case(r#"id =\x x"#, "let(def(id))")]
-    #[case(r#"id=\x x"#, "let(def(id))")]
-    #[case::call_chain(r#"id a b"#, "call(call(id, id), id)")]
-    #[case(r#"id = \a \b x"#, "let(def(def(id)))")]
-    #[case(r#"apply = \f f f"#, "let(def(call(id, id)))")]
-    #[case(r#"x = \f a (b c)"#, "let(def(call(id, call(id, id))))")]
-    #[case(r#"x = \f (a b) c"#, "let(def(call(call(id, id), id)))")]
-    #[case(r#"x = \f (\x x) c"#, "let(def(call(def(id), id)))")]
-    #[case(r#"x = \f \x x"#, "let(def(def(id)))")]
-    #[case(r#"x = \f (\x x)"#, "let(def(def(id)))")]
-    #[case::call_punct(r#"+ a b"#, "call(call(id, id), id)")]
-    #[case::assign_punct(r#"+ = \a \b a b"#, "let(def(def(call(id, id))))")]
-    #[case(r#"add = \a \b + a b"#, "let(def(def(call(call(id, id), id))))")]
-    #[case::alias(r#"add = +"#, "let(id)")]
+    #[case::id(r"id", "id")]
+    #[case::space(r"  id", "id")]
+    #[case::space(r"id  ", "id")]
+    #[case::call(r"id x", "call(id, id)")]
+    #[case::def(r"\x x", "def(id)")]
+    #[case::def(r"λx x", "def(id)")]
+    #[case::assign(r"id = \x x", "let(def(id))")]
+    #[case::assign(r"id = (\x x)", "let(def(id))")]
+    #[case::assign(r"& = \a a", "let(def(id))")]
+    #[case(r"id= \x x", "let(def(id))")]
+    #[case(r"id =\x x", "let(def(id))")]
+    #[case(r"id=\x x", "let(def(id))")]
+    #[case::call_chain(r"id a b", "call(call(id, id), id)")]
+    #[case(r"id = \a \b x", "let(def(def(id)))")]
+    #[case(r"apply = \f f f", "let(def(call(id, id)))")]
+    #[case(r"x = \f a (b c)", "let(def(call(id, call(id, id))))")]
+    #[case(r"x = \f (a b) c", "let(def(call(call(id, id), id)))")]
+    #[case(r"x = \f (\x x) c", "let(def(call(def(id), id)))")]
+    #[case(r"x = \f \x x", "let(def(def(id)))")]
+    #[case(r"x = \f (\x x)", "let(def(def(id)))")]
+    #[case::call_punct(r"+ a b", "call(call(id, id), id)")]
+    #[case::assign_punct(r"+ = \a \b a b", "let(def(def(call(id, id))))")]
+    #[case(r"add = \a \b + a b", "let(def(def(call(call(id, id), id))))")]
+    #[case::alias(r"add = +", "let(id)")]
     fn smoke_parse_stmt_ok(#[case] input: &str, #[case] exp: &str) {
         let module = parse(input).unwrap();
         assert_eq!(module.stmts.len(), 1);
@@ -164,14 +163,14 @@ mod tests {
     }
 
     #[rstest]
-    #[case(r#""#)]
-    #[case(r#"\x"#)]
-    #[case(r#"a \x"#)]
-    #[case(r#"id = "#)]
-    #[case(r#"id = \x"#)]
-    #[case(r#"(a)"#)]
-    #[case(r#"(((\a a)))"#)]
-    #[case(r#"\a a \b b a"#)]
+    #[case(r"")]
+    #[case(r"\x")]
+    #[case(r"a \x")]
+    #[case(r"id = ")]
+    #[case(r"id = \x")]
+    #[case(r"(a)")]
+    #[case(r"(((\a a)))")]
+    #[case(r"\a a \b b a")]
     fn smoke_parse_stmt_err(#[case] input: &str) {
         assert!(parse(input).is_err());
     }
