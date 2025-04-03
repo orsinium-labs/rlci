@@ -2,6 +2,8 @@
 name = "rlci"
 version = "1.1.2"
 edition = "2021"
+description = "Overly-documented Rust-powered Lambda Calculus Interpreter."
+license = "MIT"
 
 [dependencies]
 anyhow = "1.0.71"
